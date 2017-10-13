@@ -6,6 +6,7 @@
 #include "c_mb_rtu_master.h"
 #include "c_mb_tcp_master.h"
 #include "ctcpsockclient.h"
+#include "mbtypedef.h"
 
 namespace Ui {
 class MainWindow;

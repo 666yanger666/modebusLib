@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QMessageBox>
 
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -32,9 +33,9 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    this->m_RTU_master.setSlaveAdr(0x08);
+    //this->m_RTU_master.setSlaveAdr(0x08);
     this->m_RTU_master.setTimeOut(3000);
-    this->m_RTU_master.queryCMD(func_03 ,0X0001,1); //
+    //this->m_RTU_master.queryCMD(func_03 ,0X0001,1); //
 }
 
 void MainWindow::on_pushButton_3_clicked()
@@ -51,9 +52,9 @@ void MainWindow::on_pushButton_3_clicked()
 
 void MainWindow::on_pushButton_4_clicked()
 {
-    this->m_RTU_master.setSlaveAdr(0x08);
+    //this->m_RTU_master.setSlaveAdr(0x08);
     this->m_RTU_master.setTimeOut(3000);
-    this->m_RTU_master.queryCMD(func_01 ,0X0001,8); //
+    //this->m_RTU_master.queryCMD(func_01 ,0X0001,8); //
 }
 
 void MainWindow::on_pushButton_5_clicked()
@@ -64,16 +65,15 @@ void MainWindow::on_pushButton_5_clicked()
     unsigned short t2 =0x8001;
 
     qDebug()<<t1<<t2<<(quint8)array.at(0)<<(t1==t2);
-
 }
 
 void MainWindow::on_pushButton_6_clicked()
 {
     this->m_TCP_master.setSlaveAdr(0x08);
-    this->m_TCP_master.queryCMD(func_03,0X0001,2,3000); //
+    this->m_TCP_master.queryCMD(MB_func03,0X0001,2,3000); //
 }
 
 void MainWindow::on_pushButton_7_clicked()
 {
-    this->m_socket.connectSocket("192.168.1.100",9100);
+    this->m_socket.connectSocket("127.0.0.1",9100);
 }

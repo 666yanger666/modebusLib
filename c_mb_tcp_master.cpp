@@ -10,7 +10,6 @@ C_MB_TCP_MASTER::C_MB_TCP_MASTER(QObject *parent) : QObject(parent)
         this->m_listAffair.append(new C_tcp_master_affair);
         connect(this->m_listAffair.last(),&C_tcp_master_affair::sig_proc,this,&C_MB_TCP_MASTER::sig_proc);
         connect(this->m_listAffair.last(),&C_tcp_master_affair::sig_Error,this,&C_MB_TCP_MASTER::sig_Error);
-
         connect(this->m_listAffair.last(),&C_tcp_master_affair::sig_sendData,this,&C_MB_TCP_MASTER::sig_sendData);
     }
 }
@@ -40,7 +39,7 @@ void C_MB_TCP_MASTER::setSlaveAdr(quint8 adr)
     this->m_devID = adr;
 }
 
-void C_MB_TCP_MASTER::queryCMD(MOD_FuncCode fcode, quint16 adr, quint16 sum,int timeout)
+void C_MB_TCP_MASTER::queryCMD(enumMB_FuncCode fcode, quint16 adr, quint16 sum,int timeout)
 {
     C_tcp_master_affair *aff = new C_tcp_master_affair(this);
     quint16 affID = this->makeAffairID();

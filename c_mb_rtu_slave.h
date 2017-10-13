@@ -3,16 +3,7 @@
 
 #include <QObject>
 #include "c_mod_protocol.h"
-
-// 从机模式 状态机 状态定义
-enum RTU_SlaveSta
-{
-   slave_IDEL =0,       // 空闲
-   slave_CHECKREQ,      // 检查请求
-   slave_PROCREQ,       // 处理请求
-   slave_NORMALREPLY,   // 正常应答
-   slave_ERRREPLY       // 错误应答
-};
+#include "mbtypedef.h"
 
 class C_MB_RTU_SLAVE : public QObject
 {

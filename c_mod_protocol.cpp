@@ -6,7 +6,7 @@ C_mod_protocol::C_mod_protocol(QObject *parent) : QObject(parent)
 
 }
 
-QByteArray C_mod_protocol::read_01020304PDU(MOD_FuncCode fcode, quint16 adr, quint16 sum)
+QByteArray C_mod_protocol::read_01020304PDU(enumMB_FuncCode fcode, quint16 adr, quint16 sum)
 {
     QByteArray array;
     def_uin16 temp;

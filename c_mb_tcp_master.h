@@ -18,8 +18,8 @@ public:
 signals:
     void sig_sendData(QByteArray &array);  //连接通讯模块 发送数据
 signals:
-    void sig_proc(quint16 affID,quint8 slaveAdr,MOD_FuncCode fcode,MB_ReplyBody body);
-    void sig_Error(quint16 affID,quint8 slaveAdr,MOD_FuncCode fcode,TCP_Master_ErrCode errcode);
+    void sig_proc(quint16 affID,quint8 slaveAdr,enumMB_FuncCode fcode,MB_ReplyBody body);
+    void sig_Error(quint16 affID,quint8 slaveAdr,enumMB_FuncCode fcode,TCP_Master_ErrCode errcode);
 public slots:
     void slot_recvData(const QByteArray &array);  // 异步接收数据 槽
 private:
@@ -32,7 +32,7 @@ private:
 public:
     void setSlaveAdr(quint8 adr);   //  设置从机地址
     void setTimeOut(int ms);        //  设置响应超时
-    void queryCMD(MOD_FuncCode fcode,quint16 adr,quint16 sum,int timeout); // 请求数据
+    void queryCMD(enumMB_FuncCode fcode,quint16 adr,quint16 sum,int timeout); // 请求数据
 };
 
 #endif // C_MB_TCP_MASTER_H

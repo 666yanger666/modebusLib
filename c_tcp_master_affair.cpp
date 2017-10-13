@@ -11,6 +11,10 @@ void C_tcp_master_affair::slot_replyTimer()
 {
     this->m_isIdel = true;
     this->m_replytimer.stop();
+    this->m_recvBuf.clear();
+
+    // 发送超时
+    emit sig_Error(this->m_affairID,this->m_devID,this->m_curFcode,TCPmasterErr_TIMEOUT);
 
     qDebug()<<"超时！";
 }
@@ -65,7 +69,7 @@ void C_tcp_master_affair::proc_03(QByteArray &array)
     }
 
     //发送信号：处理结果
-  //  emit sig_proc(this->m_affairID,this->m_devID,this->m_curFcode,res);
+    emit sig_proc(this->m_affairID,this->m_devID,this->m_curFcode,res);
 }
 
 void C_tcp_master_affair::proc_04(QByteArray &array)
@@ -88,14 +92,17 @@ void C_tcp_master_affair::sendData(QByteArray data)
     emit sig_sendData(data);
 }
 
-void C_tcp_master_affair::queryCMD(quint16 afid,quint8 devID, MOD_FuncCode fcode, quint16 adr, quint16 sum,int timeout)
+void C_tcp_master_affair::queryCMD(quint16 afid,quint8 devID, enumMB_FuncCode fcode, quint16 adr, quint16 sum,int timeout)
 {
     if(!this->m_isIdel)
     {
         return;
     }
 
-    if(fcode!=func_01 && fcode!=func_02 && fcode!=func_03 && fcode!=func_04)
+    if(fcode!=MB_func01 &&
+       fcode!=MB_func02 &&
+       fcode!=MB_func03 &&
+       fcode!=MB_func04)
     {
         return;
     }
@@ -132,16 +139,16 @@ void C_tcp_master_affair::queryCMD(quint16 afid,quint8 devID, MOD_FuncCode fcode
     this->m_curFcode = fcode;
     this->m_curAdr = adr;
     this->m_curSum = sum;
-    if(func_01==fcode)
+    if(MB_func01==fcode)
     {
         this->m_byteSum = (sum+8)/8;
-    }else if(func_02==fcode)
+    }else if(MB_func02==fcode)
     {
         this->m_byteSum = (sum+8)/8;
-    }else if(func_03==fcode)
+    }else if(MB_func03==fcode)
     {
         this->m_byteSum = sum*2;
-    }else if(func_04==fcode)
+    }else if(MB_func04==fcode)
     {
         this->m_byteSum = sum*2;
     }
@@ -212,7 +219,16 @@ void C_tcp_master_affair::replyData(QByteArray data)
         if(((quint8)this->m_recvBuf.at(7))>=0x80)
         {
             // 解析异常码
-            //add...
+            quint8 err = (quint8)this->m_recvBuf.at(8);
+            TCP_Master_ErrCode errCode;
+            if(err>=0x01 && err<=0x0B)
+            {
+                errCode = (TCP_Master_ErrCode)err;  // 类型强转
+            }else
+            {
+                errCode = TCPmasterErr_UNKNOW;  // 未知定义
+            }
+            emit sig_Error(this->m_affairID,this->m_devID,this->m_curFcode,errCode);
             qDebug()<<"异常码:"<<QString::number((quint8)this->m_recvBuf.at(8),16);
             this->m_replytimer.stop();
             this->m_recvBuf.clear();
@@ -235,16 +251,16 @@ void C_tcp_master_affair::replyData(QByteArray data)
         }
 
         QByteArray dataArray = this->m_recvBuf.mid(9);
-        if(func_01==this->m_curFcode)
+        if(MB_func01==this->m_curFcode)
         {
             this ->proc_01(dataArray);
-        }else if(func_02==this->m_curFcode)
+        }else if(MB_func02==this->m_curFcode)
         {
             this ->proc_02(dataArray);
-        }else if(func_03==this->m_curFcode)
+        }else if(MB_func03==this->m_curFcode)
         {
             this ->proc_03(dataArray);
-        }else if(func_04==this->m_curFcode)
+        }else if(MB_func04==this->m_curFcode)
         {
             this ->proc_04(dataArray);
         }
