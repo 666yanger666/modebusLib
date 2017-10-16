@@ -43,8 +43,6 @@ enum enumMBNodeType
     MB_RTU_SLAVE = 1,   //RTU 从机
     MB_TCP_MASTER,      //TCP 主机
     MB_TCP_SLAVE,       //TCP 从机
-    MB_RTU_MASTER_GATE, //RTU 主机 网关
-    MB_RTU_SLAVE_GATE,  //RTU 从机 网关
 };
 
 // modbus 请求读数据功能枚举
@@ -76,12 +74,6 @@ struct MBRequestTransEx
     int transID;
 };
 
-// 定义请求事务结构配置信息
-struct MBRequestTransInfo
-{
-    MBRequestTrans trans;     // 请求事务
-    qint32  timeGap;          // 定时间隔(单位/秒)
-};
 
 // MB 参数类型
 enum enumMBParaType
@@ -103,11 +95,21 @@ struct MBInputParaCFG
     quint16 paraAdr;            //地址编号
     QString name;               //名称
     QString inName;             //内部名称
+    QString unit;               //单位
     double factor;              //变比系数
     double offset;              //偏置
     enumMBParaSigned paraSign;  //参数符号
     QString remark;             //备注
+
 };
+
+// 定义请求事务结构配置信息
+struct MBRequestTransInfo
+{
+    MBRequestTrans trans;     // 请求事务
+    qint32  timeGap;          // 定时间隔(单位/秒)
+};
+
 
 // 串口配置信息结构
 struct serialPortInfo
@@ -123,9 +125,11 @@ struct serialPortInfo
 // rtu master node 节点基本信息
 struct RTUMasterNodeInfo
 {
+    QString Name;
     serialPortInfo serialInfo;  // 串口配置信息
     QString remark;
 };
+
 
 // rtu master trans 事务配置信息结构
 struct confRTUMasterTrans
@@ -141,6 +145,8 @@ struct confRTUMasterNode
    QList<confRTUMasterTrans>listTrans;  // 事务配置列表
 };
 
+
+/////////////////////////////////////////////////////////////
 // MB_RTU_SLAVE 配置信息
 struct confRTUSlaveInfo
 {

@@ -6,7 +6,7 @@
 C_MB_RTU_MASTER::C_MB_RTU_MASTER(QObject *parent) : QObject(parent)
 {
      connect(&this->m_replytimer,&QTimer::timeout,this,C_MB_RTU_MASTER::slot_replyTimer);
-
+     this->m_timeout = 3000;
      this->m_sta = RTUmaster_IDEL;
 }
 
@@ -158,7 +158,7 @@ void C_MB_RTU_MASTER::proc_01(QByteArray &array)
     MB_ReplyBody res = C_mod_protocol::proc_01(this->m_byteSum,this->m_queryTrans.trans.paraSum,array);
 
     // 发送解析结果信号
-    //emit sig_proc(this->m_queryTrans.slaveAdr,this->m_queryTrans.funcCode,res);
+    emit sig_proc(this->m_queryTrans.transID,this->m_queryTrans.trans.slaveAdr,this->m_queryTrans.trans.funcCode,res);
 }
 
 void C_MB_RTU_MASTER::proc_02(QByteArray &array)
@@ -179,7 +179,7 @@ void C_MB_RTU_MASTER::proc_02(QByteArray &array)
 
 // 解析03 PDU 数据
 void C_MB_RTU_MASTER::proc_03(QByteArray &array)
-{
+{ 
     if(array.size() != this->m_byteSum)
     {
         return;

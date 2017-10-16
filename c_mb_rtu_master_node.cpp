@@ -1,7 +1,11 @@
 #include "c_mb_rtu_master_node.h"
+#include <QDebug>
 
 C_MB_rtu_master_Node::C_MB_rtu_master_Node(QObject *parent) : QObject(parent)
 {
+    // rtu_master  <-> serial
+    connect(&this->m_rtuMaster,C_MB_RTU_MASTER::sig_sendData,&this->m_serial,&C_SerialPort::writeData);
+    connect(&this->m_serial,&C_SerialPort::sig_readData,&this->m_rtuMaster,C_MB_RTU_MASTER::slot_recvData);
     //
     connect(&this->m_timer,&QTimer::timeout,this,C_MB_rtu_master_Node::slot_Timer);
 
@@ -15,10 +19,15 @@ void C_MB_rtu_master_Node::slot_Timer()
     // 判断modbus驱动是否空闲
     if(!this->m_rtuMaster.isEdel())
     {
-        return ;
+        return;
     }
 
-    //
+    // 取事务请求队首
+    if(this->m_listTrans.isEmpty())
+    {
+        return;
+    }
+
     this->m_curTrans = this->m_listTrans.first();
     this->m_rtuMaster.queryCMD(this->m_curTrans);
     this->m_listTrans.removeFirst(); // 移出队列头
@@ -109,13 +118,35 @@ void C_MB_rtu_master_Node::AddTrans(MBRequestTransInfo info)
 }
 
 // 启动服务 : 定时扫描事务请求队列
-void C_MB_rtu_master_Node::startServ()
+void C_MB_rtu_master_Node::startServ(serialCFG comCfg)
 {
+    // 启动NODE事务扫描定时器
     this->m_timer.start(1000);
+
+    // 依次启动事务对象服务
+    int sum = this->m_listTransObj.size();
+    for(int i=0;i<sum;i++)
+    {
+        this->m_listTransObj[i]->start();
+    }
+
+    // 打开串口
+    this->m_serial.openCOM(comCfg);
 }
 
 // 停止服务
 void C_MB_rtu_master_Node::stopServ()
 {
+    // 关闭串口
+    this->m_serial.closeCOM();
+
+    // 依次停止事务对象
+    int sum = this->m_listTransObj.size();
+    for(int i=0;i<sum;i++)
+    {
+        this->m_listTransObj[i]->stop();
+    }
+
+    // 停止事务扫描定时器
     this->m_timer.stop();
 }

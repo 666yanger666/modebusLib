@@ -2,11 +2,12 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "c_serialport.h"
-#include "c_mb_rtu_master.h"
-#include "c_mb_tcp_master.h"
 #include "ctcpsockclient.h"
 #include "mbtypedef.h"
+
+#include "c_mb_tcp_master.h"
+
+#include "c_mb_rtu_master_node.h"
 
 namespace Ui {
 class MainWindow;
@@ -38,8 +39,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
 
-    C_SerialPort m_serial;
-    C_MB_RTU_MASTER m_RTU_master;
+    C_MB_rtu_master_Node m_RTUmasterNode;
     C_MB_TCP_MASTER m_TCP_master;
 
     CTcpSockClient m_socket;

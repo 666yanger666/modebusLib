@@ -7,6 +7,7 @@
 #include "c_mb_rtu_master.h"
 #include "c_mb_rtu_master_trans.h"
 #include "c_mb_rtu_transid_queue.h"
+#include "c_serialport.h"
 
 // 节点对象类
 class C_MB_rtu_master_Node : public QObject
@@ -15,6 +16,7 @@ class C_MB_rtu_master_Node : public QObject
 public:
     explicit C_MB_rtu_master_Node(QObject *parent = 0);
 private:
+    C_SerialPort m_serial;
     QList<MBRequestTransEx> m_listTrans;  //事务请求信息列表
     C_MB_RTU_MASTER m_rtuMaster;   // mobus 规约模块
     QTimer m_timer; //定时器：扫描请求队列
@@ -23,15 +25,15 @@ private:
     MBRequestTransEx m_curTrans; // 当前占线trans
 private:
     void slot_Timer();
+    void slot_request(MBRequestTransEx trans); //请求
 signals:
 
 public slots:
-    void slot_request(MBRequestTransEx trans); //请求
     void slot_proc(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,MB_ReplyBody body);
     void slot_Error(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,RTU_Master_ErrCode errcode);
 public:
     void AddTrans(MBRequestTransInfo info);  // 添加一个事务
-    void startServ();
+    void startServ(serialCFG comCfg);
     void stopServ();
 };
 

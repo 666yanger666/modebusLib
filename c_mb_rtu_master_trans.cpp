@@ -1,4 +1,5 @@
 #include "c_mb_rtu_master_trans.h"
+#include <QDebug>
 
 int C_MB_rtu_master_trans::m_indexID = 0;
 
@@ -11,8 +12,6 @@ C_MB_rtu_master_trans::C_MB_rtu_master_trans(QObject *parent) : QObject(parent)
 
 void C_MB_rtu_master_trans::slot_timer()
 {
-    //emit sig_queryT(this->m_trans.slaveAdr,this->);
-
     MBRequestTransEx trans;
     trans.trans = this->m_trans.trans;
     trans.transID = this->m_transID;
@@ -66,6 +65,8 @@ void C_MB_rtu_master_trans::replyProc(int transID, quint8 slaveAdr, enumMB_FuncC
     }
 
     // ... 解析数据
+    QString strT;
+    qDebug()<<"********"<<transID<<slaveAdr<<fcode;
 
 }
 

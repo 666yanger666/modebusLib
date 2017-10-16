@@ -11,8 +11,6 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-  //  connect(&this->m_serial,&C_SerialPort::sig_readData,&this->m_RTU_master,&C_MB_RTU_MASTER::slot_recvData);
-  //  connect(&this->m_RTU_master,&C_MB_RTU_MASTER::sig_sendData,&this->m_serial,&C_SerialPort::writeData);
 
     connect(&this->m_socket,&CTcpSockClient::sig_recvData,&this->m_TCP_master,&C_MB_TCP_MASTER::slot_recvData);
     connect(&this->m_TCP_master,&C_MB_TCP_MASTER::sig_sendData,&this->m_socket,&CTcpSockClient::sendSockData);
@@ -25,17 +23,35 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_clicked()
 {
-    if(this->m_serial.openCOM("COM3",QSerialPort::Baud9600,QSerialPort::Data8,QSerialPort::OneStop, QSerialPort::NoParity,QSerialPort::NoFlowControl))
-    {
-        QMessageBox::information(this,tr("提示"),tr("OK！"));
-    }
+    serialCFG cfg;
+    cfg.comName = "COM3";
+    cfg.baudRate = QSerialPort::Baud9600;
+    cfg.dataBits = QSerialPort::Data8;
+    cfg.stopBits = QSerialPort::OneStop;
+    cfg.parity =  QSerialPort::NoParity;
+    cfg.flowControl = QSerialPort::NoFlowControl;
+
+    MBRequestTransInfo trans;
+    trans.trans.slaveAdr = 0x08;
+    trans.trans.funcCode = MB_func03;
+    trans.trans.beginAdr =0x0001;
+    trans.trans.paraSum = 0x01;
+    trans.timeGap = 5;
+    this->m_RTUmasterNode.AddTrans(trans);
+
+    trans.trans.slaveAdr = 0x08;
+    trans.trans.funcCode = MB_func01;
+    trans.trans.beginAdr =0x0001;
+    trans.trans.paraSum = 0x01;
+    trans.timeGap = 5;
+    this->m_RTUmasterNode.AddTrans(trans);
+
+    this->m_RTUmasterNode.startServ(cfg);
 }
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    //this->m_RTU_master.setSlaveAdr(0x08);
-    this->m_RTU_master.setTimeOut(3000);
-    //this->m_RTU_master.queryCMD(func_03 ,0X0001,1); //
+
 }
 
 void MainWindow::on_pushButton_3_clicked()
@@ -53,7 +69,7 @@ void MainWindow::on_pushButton_3_clicked()
 void MainWindow::on_pushButton_4_clicked()
 {
     //this->m_RTU_master.setSlaveAdr(0x08);
-    this->m_RTU_master.setTimeOut(3000);
+    //this->m_RTU_master.setTimeOut(3000);
     //this->m_RTU_master.queryCMD(func_01 ,0X0001,8); //
 }
 
