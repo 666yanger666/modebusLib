@@ -82,6 +82,7 @@ void C_MB_RTU_MASTER::slot_recvData(QByteArray &array)
 
             // 解析异常码
             quint8 err = quint8(this->m_recvBuf.at(2));
+
             RTU_Master_ErrCode errCode;
             if(err>=0x01 && err <=0x04)
             {
@@ -90,7 +91,7 @@ void C_MB_RTU_MASTER::slot_recvData(QByteArray &array)
             {
                 errCode = RTUmaster_UNKOWN;
             }
-            qDebug()<<"异常码:"<<this->m_recvBuf.at(2);
+            qDebug()<<"异常码:"<<this->m_recvBuf.at(2)<<errCode;
             this->m_sta = RTUmaster_IDEL; // 空闲状态
             this->m_replytimer.stop();
             break;

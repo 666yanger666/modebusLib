@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include "ctcpsockclient.h"
-#include "mbtypedef.h"
+#include "../../../WORK/HLMonitorGit/include/include.h"
 
 #include "c_mb_tcp_master.h"
 
@@ -36,13 +36,15 @@ private slots:
 
     void on_pushButton_7_clicked();
 
+    void on_pushButton_8_clicked();
+
 private:
     Ui::MainWindow *ui;
 
     C_MB_rtu_master_Node m_RTUmasterNode;
     C_MB_TCP_MASTER m_TCP_master;
 
-    CTcpSockClient m_socket;
+    MODEBUS::CTcpSockClient m_socket;
 };
 
 #endif // MAINWINDOW_H

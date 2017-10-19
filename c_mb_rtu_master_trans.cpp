@@ -67,11 +67,15 @@ void C_MB_rtu_master_trans::replyProc(int transID, quint8 slaveAdr, enumMB_FuncC
     // ... 解析数据
     QString strT;
     qDebug()<<"********"<<transID<<slaveAdr<<fcode;
+    body.reg.clear();
 
 }
 
 //错误应答
 void C_MB_rtu_master_trans::replyErr(int transID, quint8 slaveAdr, enumMB_FuncCode fcode, RTU_Master_ErrCode errcode)
 {
-
+    transID =transID;
+    slaveAdr =slaveAdr;
+    fcode = fcode;
+    errcode = errcode;
 }

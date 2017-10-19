@@ -1,9 +1,11 @@
 #ifndef CTCPSOCKCLIENT_H
 #define CTCPSOCKCLIENT_H
-#include<QObject>
+#include <QObject>
 #include <QTcpSocket>
 #include <QByteArray>
 #include <QList>
+
+namespace MODEBUS {
 
 //TCP client 模块
 class CTcpSockClient : public QObject
@@ -36,4 +38,6 @@ public:
     void connectSocket(QString strIP,quint16 nPort);  //连接
 };
 
+}
 #endif // CTCPSOCKCLIENT_H
+

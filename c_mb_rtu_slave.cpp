@@ -112,12 +112,13 @@ void C_MB_RTU_SLAVE::proc_01(QByteArray &array)
          return;
     }
 
-    //if()
+    /*
 
     def_uin16 sum;
     sum.by_1 = array.at(0);
     sum.by_0 = array.at(1);
     //...地址 + 数量合法性检查
+    */
 }
 
 void C_MB_RTU_SLAVE::proc_02(QByteArray &array)
@@ -126,7 +127,7 @@ void C_MB_RTU_SLAVE::proc_02(QByteArray &array)
     {
         return;
     }
-
+/*
     def_uin16 adr;
     adr.by_1 = array.at(0);
     adr.by_0 = array.at(1);
@@ -136,6 +137,7 @@ void C_MB_RTU_SLAVE::proc_02(QByteArray &array)
     sum.by_1 = array.at(0);
     sum.by_0 = array.at(1);
     //...地址 + 数量合法性检查
+    */
 }
 
 void C_MB_RTU_SLAVE::proc_03(QByteArray &array)
@@ -144,7 +146,7 @@ void C_MB_RTU_SLAVE::proc_03(QByteArray &array)
     {
         return;
     }
-
+/*
     def_uin16 adr;
     adr.by_1 = array.at(0);
     adr.by_0 = array.at(1);
@@ -154,6 +156,7 @@ void C_MB_RTU_SLAVE::proc_03(QByteArray &array)
     sum.by_1 = array.at(0);
     sum.by_0 = array.at(1);
     //...地址 + 数量合法性检查
+    */
 }
 
 void C_MB_RTU_SLAVE::proc_04(QByteArray &array)
@@ -162,7 +165,7 @@ void C_MB_RTU_SLAVE::proc_04(QByteArray &array)
     {
         return;
     }
-
+/*
     def_uin16 adr;
     adr.by_1 = array.at(0);
     adr.by_0 = array.at(1);
@@ -172,4 +175,5 @@ void C_MB_RTU_SLAVE::proc_04(QByteArray &array)
     sum.by_1 = array.at(0);
     sum.by_0 = array.at(1);
     //...地址 + 数量合法性检查
+    */
 }

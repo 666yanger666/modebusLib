@@ -49,7 +49,6 @@ HEADERS  += mainwindow.h \
     c_mb_tcp_slave.h \
     c_tcp_master_affair.h \
     ctcpsockclient.h \
-    mbtypedef.h \
     c_mb_rtu_master_trans.h \
     c_mb_rtu_transid_queue.h \
     c_mb_rtu_master_node.h

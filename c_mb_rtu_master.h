@@ -4,7 +4,7 @@
 #include <QObject>
 #include "c_mod_protocol.h"
 #include <QTimer>
-#include "mbtypedef.h"
+#include "../../../WORK/HLMonitorGit/include/include.h"
 #include <QList>
 
 /*

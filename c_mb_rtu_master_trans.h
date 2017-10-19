@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QTimer>
-#include "mbtypedef.h"
+#include "../../../WORK/HLMonitorGit/include/include.h"
 
 // rtu master 事务对象：自带定时器  实现定时请求
 class C_MB_rtu_master_trans : public QObject

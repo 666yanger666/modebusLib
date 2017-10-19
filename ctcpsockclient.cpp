@@ -3,6 +3,7 @@
 #include<QThread>
 #include<QTime>
 
+using namespace MODEBUS;
 CTcpSockClient::CTcpSockClient(QObject *parent) : QObject(parent)
 {
     m_pSock = new QTcpSocket(this); //必须指定父对象指针

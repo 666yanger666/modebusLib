@@ -41,7 +41,7 @@ void C_MB_TCP_MASTER::setSlaveAdr(quint8 adr)
 
 void C_MB_TCP_MASTER::queryCMD(enumMB_FuncCode fcode, quint16 adr, quint16 sum,int timeout)
 {
-    C_tcp_master_affair *aff = new C_tcp_master_affair(this);
+   // C_tcp_master_affair *aff = new C_tcp_master_affair(this);
     quint16 affID = this->makeAffairID();
 
     int listSUM = this->m_listAffair.size();

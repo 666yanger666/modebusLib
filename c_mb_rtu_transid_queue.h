@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QList>
-#include "mbtypedef.h"
+#include "../../../WORK/HLMonitorGit/include/include.h"
 
 // 事务ID队列
 class C_MB_rtu_transID_Queue : public QObject

@@ -3,7 +3,7 @@
 #include "c_crc.h"
 #include <QDebug>
 #include <QMessageBox>
-
+#include <QUuid>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -11,9 +11,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-
-    connect(&this->m_socket,&CTcpSockClient::sig_recvData,&this->m_TCP_master,&C_MB_TCP_MASTER::slot_recvData);
-    connect(&this->m_TCP_master,&C_MB_TCP_MASTER::sig_sendData,&this->m_socket,&CTcpSockClient::sendSockData);
+    connect(&this->m_socket,&MODEBUS::CTcpSockClient::sig_recvData,&this->m_TCP_master,&C_MB_TCP_MASTER::slot_recvData);
+    connect(&this->m_TCP_master,&C_MB_TCP_MASTER::sig_sendData,&this->m_socket,&MODEBUS::CTcpSockClient::sendSockData);
 }
 
 MainWindow::~MainWindow()
@@ -92,4 +91,14 @@ void MainWindow::on_pushButton_6_clicked()
 void MainWindow::on_pushButton_7_clicked()
 {
     this->m_socket.connectSocket("127.0.0.1",9100);
+}
+
+void MainWindow::on_pushButton_8_clicked()
+{
+    for(int i=0;i<1000;i++)
+    {
+        QUuid ID = QUuid::createUuid();
+
+        qDebug()<< ID.toString();
+    }
 }

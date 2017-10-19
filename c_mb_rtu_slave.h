@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include "c_mod_protocol.h"
-#include "mbtypedef.h"
+#include "../../../WORK/HLMonitorGit/include/include.h"
 
 class C_MB_RTU_SLAVE : public QObject
 {

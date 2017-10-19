@@ -2,7 +2,7 @@
 #define C_MOD_PROTOCOL_H
 
 #include <QObject>
-#include "mbtypedef.h"
+#include "../../../WORK/HLMonitorGit/include/include.h"
 
 /////////////////////
 union def_uin16
