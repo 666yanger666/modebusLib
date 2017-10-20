@@ -5,6 +5,12 @@
 #include <QMessageBox>
 #include <QUuid>
 
+#include <QFile>
+#include <QTextStream>
+#include <QScriptEngine>
+#include <QScriptValue>
+#include <QScriptValueList>
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -101,4 +107,76 @@ void MainWindow::on_pushButton_8_clicked()
 
         qDebug()<< ID.toString();
     }
+}
+
+void MainWindow::on_pushButton_9_clicked()
+{
+       QString result = "";
+       QFile scriptFile("TransCal.js");
+       if (!scriptFile.open(QIODevice::ReadOnly))
+       {
+           result.clear();
+           qWarning() << "encodePass.js open failed";
+           return;
+       }
+       QTextStream out(&scriptFile);
+       QString contents = out.readAll();
+       scriptFile.close();
+       qWarning()<<"OK";
+
+       contents.clear();
+       contents = "function1 trans2wCal(var1,var2)\r\n\
+       {\r\n\
+               var MAX =200;\r\n\
+               var res = var1+var2;\r\n\
+               if(res>MAX)\r\n\
+               return 0;\r\n\
+               return  res;\r\n\
+       }\r\n\
+               function trans3wCal(var1,var2)\r\n\
+       {\r\n\
+               return var1*var2+5;\r\n\
+       }";
+
+       ui->textEdit->setText(contents);
+       QScriptSyntaxCheckResult res =QScriptEngine::checkSyntax (contents);
+       qWarning()<<"语法检查:"<<res.state();
+
+       QTextCursor cursor(ui->textEdit->textCursor());//
+       cursor.setPosition(res.errorLineNumber());
+       if(0==res.state())
+       {
+           qWarning()<<"错误行:"<<res.errorLineNumber()<<"错误列："<<res.errorColumnNumber();
+           qWarning()<<"错误提示："<<res.errorMessage();
+           return;
+       }
+
+       double var1 =100.5;  // ui->lineEdit_var1->text().toDouble();
+       double var2 =200.6;  // ui->lineEdit_var2->text().toDouble();
+       qDebug() << "var1:" << var1 << "var2:" << var2;
+
+       QScriptValueList args;      //调用js方法时传入的参数
+       args << QScriptValue(var1) << QScriptValue(var2);
+       QScriptEngine engine;
+       QScriptValue js = engine.evaluate(contents);        //个人理解：加载js文本到操作引擎
+   js.isError()
+       QScriptValue func;
+       func = engine.globalObject().property("trans2wCal");   //调用js方法
+       double ret = func.call(QScriptValue(), args).toVariant().toDouble();
+       qDebug() << "result:" << ret;
+      // ui->lineEdit_sub->setText(result);
+
+       func = engine.globalObject().property("trans3wCal");   //调用js方法
+       result = func.call(QScriptValue(), args).toString();
+       qDebug() << "result:" << result;
+      // ui->lineEdit_mul->setText(result);
+}
+
+void MainWindow::on_pushButton_10_clicked()
+{
+    quint8 t1= 0Xf0;
+    qint8 t2= 0Xf0;
+
+    double db= t1;
+    qDebug()<<(-2*t1+1)<<(-2*t2+1)<<double(t1)<<db;
 }
