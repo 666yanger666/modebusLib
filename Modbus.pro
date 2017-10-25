@@ -35,10 +35,11 @@ SOURCES += main.cpp\
     c_mb_tcp_master.cpp \
     c_mb_tcp_slave.cpp \
     c_tcp_master_affair.cpp \
-    ctcpsockclient.cpp \
+    ctcpsock.cpp \
     c_mb_rtu_master_trans.cpp \
-    c_mb_rtu_transid_queue.cpp \
-    c_mb_rtu_master_node.cpp
+    c_mb_rtu_master_node.cpp \
+    c_mb_tcp_master_node.cpp \
+    c_mb_tcp_master_trans.cpp
 
 HEADERS  += mainwindow.h \
     c_serialport.h \
@@ -49,9 +50,10 @@ HEADERS  += mainwindow.h \
     c_mb_tcp_master.h \
     c_mb_tcp_slave.h \
     c_tcp_master_affair.h \
-    ctcpsockclient.h \
+    ctcpsock.h \
     c_mb_rtu_master_trans.h \
-    c_mb_rtu_transid_queue.h \
-    c_mb_rtu_master_node.h
+    c_mb_rtu_master_node.h \
+    c_mb_tcp_master_node.h \
+    c_mb_tcp_master_trans.h
 
 FORMS    += mainwindow.ui

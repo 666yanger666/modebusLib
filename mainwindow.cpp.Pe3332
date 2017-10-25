@@ -90,7 +90,7 @@ void MainWindow::on_pushButton_5_clicked()
 
 void MainWindow::on_pushButton_6_clicked()
 {
-    //this->m_TCP_master.setSlaveAdr(0x08);
+   // this->m_TCP_master.setSlaveAdr(0x08);
     //this->m_TCP_master.queryCMD(MB_func03,0X0001,2,3000); //
 }
 

@@ -6,7 +6,7 @@
 C_MB_RTU_MASTER::C_MB_RTU_MASTER(QObject *parent) : QObject(parent)
 {
      connect(&this->m_replytimer,&QTimer::timeout,this,C_MB_RTU_MASTER::slot_replyTimer);
-     this->m_timeout = 3000;
+     this->m_timeout = 3000; //响应超时
      this->m_sta = RTUmaster_IDEL;
 }
 
@@ -217,11 +217,6 @@ void C_MB_RTU_MASTER::setTimeOut(int ms)
 
 void C_MB_RTU_MASTER::queryCMD(MBRequestTransEx trans)
 {
-    if(RTUmaster_IDEL!=this->m_sta)
-    {
-        return;   // 非空闲模式
-    }
-
     if(trans.trans.funcCode!=MB_func01 &&
        trans.trans.funcCode!=MB_func02 &&
        trans.trans.funcCode!=MB_func03 &&
@@ -246,7 +241,7 @@ void C_MB_RTU_MASTER::queryCMD(MBRequestTransEx trans)
     // 清空接收缓存发送数据
     this->m_recvBuf.clear();
 
-    // 计算正常应答 数据长度
+    // 计算正常应答 数据字节数
     if(MB_func01==trans.trans.funcCode)
     {
         this->m_byteSum = (trans.trans.paraSum+8)/8;
@@ -273,7 +268,7 @@ void C_MB_RTU_MASTER::queryCMD(MBRequestTransEx trans)
 }
 
 // 协议驱动状态机是否空闲
-bool C_MB_RTU_MASTER::isEdel()
+bool C_MB_RTU_MASTER::isIdle()
 {
     if(RTUmaster_IDEL ==this->m_sta)
     {
@@ -281,3 +276,4 @@ bool C_MB_RTU_MASTER::isEdel()
     }
     return false;
 }
+

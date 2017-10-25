@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "ctcpsockclient.h"
+#include "ctcpsock.h"
 #include "../../../WORK/HLMonitorGit/include/include.h"
 
 #include "c_mb_tcp_master.h"
@@ -48,7 +48,7 @@ private:
     C_MB_rtu_master_Node m_RTUmasterNode;
     C_MB_TCP_MASTER m_TCP_master;
 
-    MODEBUS::CTcpSockClient m_socket;
+    CTcpSock m_socket;
 };
 
 #endif // MAINWINDOW_H

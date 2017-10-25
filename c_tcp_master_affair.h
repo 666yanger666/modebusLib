@@ -27,25 +27,22 @@ public:
     explicit C_tcp_master_affair(QObject *parent = 0);
 
 signals:
-    void sig_proc(quint16 affID,quint8 slaveAdr,enumMB_FuncCode fcode,MB_ReplyBody body);
-    void sig_Error(quint16 affID,quint8 slaveAdr,enumMB_FuncCode fcode,TCP_Master_ErrCode errcode);
+    void sig_proc(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,MB_ReplyBody body);
+    void sig_Error(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,TCP_Master_ErrCode errcode);
 signals:
     void sig_sendData(QByteArray &array);  // 连接到 tcp_master对象中转再连接到 通讯模块
 public slots:
 private slots:
     void slot_replyTimer();
 private:
-    quint16 m_affairID;       // 事务ID
-    quint8 m_devID;           // 设备单元ID
     QTimer m_replytimer;      // 响应超时定时器
 
-    enumMB_FuncCode m_curFcode;  // 当前请求功能码
-    quint16 m_curAdr;         // 当前请求起始地址
-    quint16 m_curSum;         // 当前请求数据项数
     quint8  m_byteSum;        // 正常应答字节
 
     bool m_isIdel;            // 是否通讯状态使用
     QByteArray m_recvBuf;     // 应答数据暂存
+
+    MBRequestTransTCPEx m_queryTrans;
 
 private:
     void proc_01(QByteArray &array);
@@ -55,7 +52,7 @@ private:
 private:
     void sendData(QByteArray data);
 public:
-    void queryCMD(quint16 afid,quint8 devID,enumMB_FuncCode fcode,quint16 adr,quint16 sum,int timeout); // 请求数据
+    void queryCMD(MBRequestTransTCPEx trans,int timeout); // 请求数据
     void replyData(QByteArray data);
     bool isIdel();
 };

@@ -48,7 +48,7 @@ private:
 public:
     void setTimeOut(int ms);        //  设置响应超时
     void queryCMD(MBRequestTransEx trans); // 请求数据
-    bool isEdel();
+    bool isIdle();
 };
 
 #endif // C_MB_RTU_MASTER_H

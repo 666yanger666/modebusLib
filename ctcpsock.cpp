@@ -1,31 +1,30 @@
-#include "ctcpsockclient.h"
+#include "ctcpsock.h"
 #include <QDebug>
 #include<QThread>
 #include<QTime>
 
-using namespace MODEBUS;
-CTcpSockClient::CTcpSockClient(QObject *parent) : QObject(parent)
+CTcpSock::CTcpSock(QObject *parent) : QObject(parent)
 {
     m_pSock = new QTcpSocket(this); //必须指定父对象指针
 
-    connect(this->m_pSock,&QTcpSocket::connected,this,&CTcpSockClient::on_sockConnected);
-    connect(this->m_pSock,&QTcpSocket::readyRead,this,&CTcpSockClient::on_sockReceived);
-    connect(this->m_pSock,&QTcpSocket::disconnected,this,&CTcpSockClient::on_sockDisconnected);
+    connect(this->m_pSock,&QTcpSocket::connected,this,&CTcpSock::on_sockConnected);
+    connect(this->m_pSock,&QTcpSocket::readyRead,this,&CTcpSock::on_sockReceived);
+    connect(this->m_pSock,&QTcpSocket::disconnected,this,&CTcpSock::on_sockDisconnected);
     connect(this->m_pSock,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(on_error(QAbstractSocket::SocketError)));
 }
 
 //
-void CTcpSockClient::on_sockConnected()
+void CTcpSock::on_sockConnected()
 {
     emit sig_sockConnected();
 }
 
-void CTcpSockClient::on_sockDisconnected()
+void CTcpSock::on_sockDisconnected()
 {
     emit sig_sockDisconnected();
 }
 
-void CTcpSockClient::on_sockReceived()
+void CTcpSock::on_sockReceived()
 {
     if(this->m_pSock->bytesAvailable()>0)
     {
@@ -34,7 +33,7 @@ void CTcpSockClient::on_sockReceived()
     }
 }
 
-void CTcpSockClient::on_error(QAbstractSocket::SocketError socketError)
+void CTcpSock::on_error(QAbstractSocket::SocketError socketError)
 {
    emit sig_sockError(socketError);
 }
@@ -42,7 +41,7 @@ void CTcpSockClient::on_error(QAbstractSocket::SocketError socketError)
 // strIP :IP地址
 // nPort :端口号
 // msecs :超时/ms
-bool CTcpSockClient::connectSocket(QString strIP, quint16 nPort,int msecs)
+bool CTcpSock::connectSocket(QString strIP, quint16 nPort,int msecs)
 {
     this->m_pSock->abort(); // 取消连接  复位套接字   ... 复位操作
     this->m_pSock->connectToHost(strIP,nPort);
@@ -61,7 +60,7 @@ bool CTcpSockClient::connectSocket(QString strIP, quint16 nPort,int msecs)
 }
 
 // 断开连接
-void CTcpSockClient::disconnectSocket()
+void CTcpSock::disconnectSocket()
 {
     if(m_pSock->state()==QAbstractSocket::ConnectedState)
     {
@@ -69,18 +68,19 @@ void CTcpSockClient::disconnectSocket()
     }
 }
 
-QAbstractSocket::SocketState CTcpSockClient::stateSock()
+QAbstractSocket::SocketState CTcpSock::stateSock()
 {
     return this->m_pSock->state();
 }
 
 // 发送数据
-void CTcpSockClient::sendSockData(QByteArray &array)
+void CTcpSock::sendSockData(QByteArray &array)
 {
     this->m_pSock->write(array);
+    this->m_pSock->flush();   //发送
 }
 
-void CTcpSockClient::connectSocket(QString strIP, quint16 nPort)
+void CTcpSock::connectSocket(QString strIP, quint16 nPort)
 {
     this->m_pSock->abort(); // 取消连接  复位套接字   ... 复位操作
     this->m_pSock->connectToHost(strIP,nPort);

@@ -6,9 +6,11 @@ C_MB_rtu_master_Node::C_MB_rtu_master_Node(QObject *parent) : QObject(parent)
     // rtu_master  <-> serial
     connect(&this->m_rtuMaster,C_MB_RTU_MASTER::sig_sendData,&this->m_serial,&C_SerialPort::writeData);
     connect(&this->m_serial,&C_SerialPort::sig_readData,&this->m_rtuMaster,C_MB_RTU_MASTER::slot_recvData);
-    //
+
+    // 定时器扫描
     connect(&this->m_timer,&QTimer::timeout,this,C_MB_rtu_master_Node::slot_Timer);
 
+    // node节点与master规约模块
     connect(&this->m_rtuMaster,&C_MB_RTU_MASTER::sig_proc,this,&C_MB_rtu_master_Node::slot_proc);
     connect(&this->m_rtuMaster,&C_MB_RTU_MASTER::sig_Error,this,&C_MB_rtu_master_Node::slot_Error);
 }
@@ -17,7 +19,7 @@ C_MB_rtu_master_Node::C_MB_rtu_master_Node(QObject *parent) : QObject(parent)
 void C_MB_rtu_master_Node::slot_Timer()
 {
     // 判断modbus驱动是否空闲
-    if(!this->m_rtuMaster.isEdel())
+    if(!this->m_rtuMaster.isIdle())
     {
         return;
     }
@@ -28,8 +30,7 @@ void C_MB_rtu_master_Node::slot_Timer()
         return;
     }
 
-    this->m_curTrans = this->m_listTrans.first();
-    this->m_rtuMaster.queryCMD(this->m_curTrans);
+    this->m_rtuMaster.queryCMD(this->m_listTrans.first());
     this->m_listTrans.removeFirst(); // 移出队列头
 }
 
@@ -48,23 +49,9 @@ void C_MB_rtu_master_Node::slot_request(MBRequestTransEx trans)
     this->m_listTrans.append(trans);
 }
 
+// 正常应答数据报
 void C_MB_rtu_master_Node::slot_proc(int transID,quint8 slaveAdr, enumMB_FuncCode fcode, MB_ReplyBody body)
 {
-    if(transID!=this->m_curTrans.transID)
-    {
-        return;
-    }
-
-    if(slaveAdr!=this->m_curTrans.trans.slaveAdr)
-    {
-        return;
-    }
-
-    if(fcode!=this->m_curTrans.trans.funcCode)
-    {
-        return;
-    }
-
     // 按照transID 查找接收应答的 trans对象
     int sum = this->m_listTransObj.size();
     for(int i=0;i<sum;i++)
@@ -77,22 +64,7 @@ void C_MB_rtu_master_Node::slot_proc(int transID,quint8 slaveAdr, enumMB_FuncCod
 }
 
 void C_MB_rtu_master_Node::slot_Error(int transID,quint8 slaveAdr, enumMB_FuncCode fcode, RTU_Master_ErrCode errcode)
-{
-    if(transID!=this->m_curTrans.transID)
-    {
-        return;
-    }
-
-    if(slaveAdr!=this->m_curTrans.trans.slaveAdr)
-    {
-        return;
-    }
-
-    if(fcode!=this->m_curTrans.trans.funcCode)
-    {
-        return;
-    }
-
+{ 
     // 按照transID 查找接收应答的 trans对象
     int sum = this->m_listTransObj.size();
     for(int i=0;i<sum;i++)

@@ -68,7 +68,6 @@ void C_MB_rtu_master_trans::replyProc(int transID, quint8 slaveAdr, enumMB_FuncC
     QString strT;
     qDebug()<<"********"<<transID<<slaveAdr<<fcode;
     body.reg.clear();
-
 }
 
 //错误应答
