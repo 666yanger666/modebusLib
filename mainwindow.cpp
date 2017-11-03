@@ -29,7 +29,7 @@ MainWindow::~MainWindow()
 void MainWindow::on_pushButton_clicked()
 {
     serialCFG cfg;
-    cfg.comName = "COM3";
+    cfg.comName = "COM12";
     cfg.baudRate = QSerialPort::Baud9600;
     cfg.dataBits = QSerialPort::Data8;
     cfg.stopBits = QSerialPort::OneStop;
@@ -44,11 +44,11 @@ void MainWindow::on_pushButton_clicked()
     trans.timeGap = 5;
     this->m_RTUmasterNode.AddTrans(trans);
 
-    trans.trans.slaveAdr = 0x08;
-    trans.trans.funcCode = MB_func01;
-    trans.trans.beginAdr =0x0001;
+    trans.trans.slaveAdr = 0x01;
+    trans.trans.funcCode = MB_func03;
+    trans.trans.beginAdr =0x0000;
     trans.trans.paraSum = 0x01;
-    trans.timeGap = 5;
+    trans.timeGap = 10;
     this->m_RTUmasterNode.AddTrans(trans);
 
     this->m_RTUmasterNode.startServ(cfg);
@@ -178,5 +178,6 @@ void MainWindow::on_pushButton_10_clicked()
     qint8 t2= 0Xf0;
 
     double db= t1;
-    qDebug()<<(-2*t1+1)<<(-2*t2+1)<<double(t1)<<db;
+    qDebug()<<(int)(t1*1+0)<<(uint)(t1*1+0);
+    qDebug()<<(int)(t2*1+0)<<(uint)(t2*(-1)+0);
 }

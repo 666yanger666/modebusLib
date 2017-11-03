@@ -93,7 +93,7 @@ void C_MB_rtu_master_Node::AddTrans(MBRequestTransInfo info)
 void C_MB_rtu_master_Node::startServ(serialCFG comCfg)
 {
     // 启动NODE事务扫描定时器
-    this->m_timer.start(1000);
+    this->m_timer.start(200);
 
     // 依次启动事务对象服务
     int sum = this->m_listTransObj.size();
