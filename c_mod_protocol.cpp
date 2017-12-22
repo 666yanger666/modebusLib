@@ -1,5 +1,6 @@
 #include "c_mod_protocol.h"
 #include "c_crc.h"
+#include "c_endian.h"
 
 C_mod_protocol::C_mod_protocol(QObject *parent) : QObject(parent)
 {
@@ -9,17 +10,43 @@ C_mod_protocol::C_mod_protocol(QObject *parent) : QObject(parent)
 QByteArray C_mod_protocol::read_01020304PDU(enumMB_FuncCode fcode, quint16 adr, quint16 sum)
 {
     QByteArray array;
-    def_uin16 temp;
-
     array.append(fcode);
 
-    temp.value = adr;
-    array.append(temp.by_1);
-    array.append(temp.by_0);
+    quint8 by0;
+    quint8 by1;
+    C_endian::uint16(ORDER_BIG,adr,by0,by1);
+    array.append(by0);
+    array.append(by1);
 
-    temp.value = sum;
-    array.append(temp.by_1);
-    array.append(temp.by_0);
+    C_endian::uint16(ORDER_BIG,sum,by0,by1);
+    array.append(by0);
+    array.append(by1);
+
+    return array;
+}
+
+QByteArray C_mod_protocol::write_0X10(quint16 adr, quint16 sum, const QList<MBregister> &regList)
+{
+    QByteArray array;
+    array.append(0X10);
+
+    quint8 by0;
+    quint8 by1;
+    C_endian::uint16(ORDER_BIG,adr,by0,by1);
+    array.append(by0);
+    array.append(by1);
+
+    C_endian::uint16(ORDER_BIG,sum,by0,by1);
+    array.append(by0);
+    array.append(by1);
+
+    array.append(sum*2);
+
+    foreach(MBregister reg,regList)
+    {
+        array.append(reg.byte_0);
+        array.append(reg.byte_1);
+    }
 
     return array;
 }
@@ -71,12 +98,13 @@ MB_ReplyBody C_mod_protocol::proc_02(quint8 byteSum, quint16 itemSum, QByteArray
 MB_ReplyBody C_mod_protocol::proc_03(quint16 itemSum, QByteArray &array)
 {
     MB_ReplyBody res;
+    MBregister rg;
     for(int i=0;i<itemSum;i++)
     {
-        def_uin16 temp;
-        temp.by_1 = array.at(2*i);
-        temp.by_0 = array.at(2*i+1);
-        res.reg.append(temp.value);
+        rg.byte_0 = array.at(2*i);
+        rg.byte_1 = array.at(2*i+1);
+
+        res.regList.append(rg);
     }
 
     return res;
@@ -85,13 +113,25 @@ MB_ReplyBody C_mod_protocol::proc_03(quint16 itemSum, QByteArray &array)
 MB_ReplyBody C_mod_protocol::proc_04(quint16 itemSum, QByteArray &array)
 {
     MB_ReplyBody res;
+    MBregister rg;
     for(int i=0;i<itemSum;i++)
     {
-        def_uin16 temp;
-        temp.by_1 = array.at(2*i);
-        temp.by_0 = array.at(2*i+1);
-        res.reg.append(temp.value);
+        rg.byte_0 = array.at(2*i);
+        rg.byte_1 = array.at(2*i+1);
+
+        res.regList.append(rg);
     }
+
+    return res;
+}
+
+// 从机错误应答组包
+QByteArray C_mod_protocol::Error_Reply(quint8 slaveAdr, enumMB_FuncCode fcode, RTU_Slave_ErrCode errCode)
+{
+    QByteArray res;
+    res.append(slaveAdr);
+    res.append(0X80+fcode);
+    res.append(errCode);
 
     return res;
 }

@@ -4,8 +4,8 @@
 #include <QObject>
 #include "c_mod_protocol.h"
 #include <QTimer>
-#include "../../../WORK/HLMonitorGit/include/include.h"
 #include <QList>
+#include "../../../WORK/HLMonitorGit/Fram/WORK/HLMonitor/stable.h"
 
 /*
 寄存器地址  连续/非连续  处理  需要上层按照配置做轮询
@@ -34,19 +34,21 @@ private:
     quint8  m_byteSum;   // 正常应答字节
 
     MBRequestTransEx m_queryTrans;
+
 private:
 
 public slots:
    void slot_replyTimer();
    void slot_recvData(QByteArray &array);  // 异步接收数据--槽
 private:
-   void proc_01(QByteArray &array);
-   void proc_02(QByteArray &array);
-   void proc_03(QByteArray &array);
-   void proc_04(QByteArray &array);
+   void proc_0X01(QByteArray array);
+   void proc_0X02(QByteArray array);
+   void proc_0X03(QByteArray array);
+   void proc_0X04(QByteArray array);
+   void proc_0X10(QByteArray array);
 
 public:
-    void setTimeOut(int ms);        //  设置响应超时
+    void setTimeOut(int ms);        // 设置响应超时
     void queryCMD(MBRequestTransEx trans); // 请求数据
     bool isIdle();
 };

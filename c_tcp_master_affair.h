@@ -49,6 +49,7 @@ private:
     void proc_02(QByteArray &array);
     void proc_03(QByteArray &array);
     void proc_04(QByteArray &array);
+    void proc_0X10(QByteArray array);
 private:
     void sendData(QByteArray data);
 public:

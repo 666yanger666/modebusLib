@@ -14,12 +14,13 @@ public:
 signals:
     void sig_sendData(QByteArray &array);  //连接通讯模块 发送数据
 public slots:
-    void slot_recvData(QByteArray &array);  // 异步接收数据 槽
+    void slot_recvData(QByteArray &array); //异步接收数据 槽
 private:
     RTU_SlaveSta m_sta;
     quint8 m_slaveAdr;   // 从机地址（主站模式：本机地址)
-
     QByteArray m_recvBuf;// 数据接收缓存
+
+    RTUSlaveNodeInfo m_slaveInfo;
 
 private:
    void proc_01(QByteArray &array);
@@ -27,8 +28,9 @@ private:
    void proc_03(QByteArray &array);
    void proc_04(QByteArray &array);
 
-
    QList<bool> m_regDataCFG;
+
+   void Error_Reply(quint8 slaveAdr,enumMB_FuncCode fcode,RTU_Slave_ErrCode errCode);
 
 private:
     void sendData(QByteArray &array);

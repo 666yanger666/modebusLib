@@ -4,18 +4,6 @@
 #include <QObject>
 #include "../../../WORK/HLMonitorGit/include/include.h"
 
-/////////////////////
-union def_uin16
-{
-    quint16 value;
-    struct
-    {
-        quint8 by_0;
-        quint8 by_1;
-    };
-};
-
-//////////////////////////
 
 class C_mod_protocol : public QObject
 {
@@ -30,10 +18,13 @@ public slots:
 
 public:
     static QByteArray read_01020304PDU(enumMB_FuncCode fcode,quint16 adr,quint16 sum);
+    static QByteArray write_0X10(quint16 adr,quint16 sum,const QList<MBregister>&regList);
     static MB_ReplyBody proc_01(quint8 byteSum, quint16 itemSum, QByteArray &array);
     static MB_ReplyBody proc_02(quint8 byteSum, quint16 itemSum, QByteArray &array);
     static MB_ReplyBody proc_03(quint16 itemSum, QByteArray &array);
     static MB_ReplyBody proc_04(quint16 itemSum, QByteArray &array);
+
+    static QByteArray Error_Reply(quint8 slaveAdr,enumMB_FuncCode fcode,RTU_Slave_ErrCode errCode);
 };
 
 #endif // C_MOD_PROTOCOL_H

@@ -3,16 +3,27 @@
 
 C_MB_rtu_master_Node::C_MB_rtu_master_Node(QObject *parent) : QObject(parent)
 {
+    //qRegisterMetaType(MBRequestTransEx);
     // rtu_master  <-> serial
-    connect(&this->m_rtuMaster,C_MB_RTU_MASTER::sig_sendData,&this->m_serial,&C_SerialPort::writeData);
-    connect(&this->m_serial,&C_SerialPort::sig_readData,&this->m_rtuMaster,C_MB_RTU_MASTER::slot_recvData);
+    connect(&this->m_rtuMaster,&C_MB_RTU_MASTER::sig_sendData,&this->m_serial,&C_SerialPort::writeData);
+    connect(&this->m_serial,&C_SerialPort::sig_readData,&this->m_rtuMaster,&C_MB_RTU_MASTER::slot_recvData);
 
     // 定时器扫描
-    connect(&this->m_timer,&QTimer::timeout,this,C_MB_rtu_master_Node::slot_Timer);
+    connect(&this->m_timer,&QTimer::timeout,this,&C_MB_rtu_master_Node::slot_Timer);
 
     // node节点与master规约模块
     connect(&this->m_rtuMaster,&C_MB_RTU_MASTER::sig_proc,this,&C_MB_rtu_master_Node::slot_proc);
     connect(&this->m_rtuMaster,&C_MB_RTU_MASTER::sig_Error,this,&C_MB_rtu_master_Node::slot_Error);
+}
+
+// 析构trans对象
+C_MB_rtu_master_Node::~C_MB_rtu_master_Node()
+{
+    int sum =this->m_listTransObj.size();
+    for(int i=0;i<sum;i++)
+    {
+        delete this->m_listTransObj.at(i);
+    }
 }
 
 // 定时扫描事务请求队列服务
@@ -76,34 +87,25 @@ void C_MB_rtu_master_Node::slot_Error(int transID,quint8 slaveAdr, enumMB_FuncCo
     }
 }
 
-// 添加一个 事务对象
-void C_MB_rtu_master_Node::AddTrans(MBRequestTransInfo info)
-{
-    C_MB_rtu_master_trans *ptr = new C_MB_rtu_master_trans();
-    if(ptr!=NULL)
-    {
-        ptr->setQueryTrans(info);
-    }
-    this->m_listTransObj.append(ptr);
-
-    connect(ptr,&C_MB_rtu_master_trans::sig_reuest,this,&C_MB_rtu_master_Node::slot_request);
-}
-
 // 启动服务 : 定时扫描事务请求队列
-void C_MB_rtu_master_Node::startServ(serialCFG comCfg)
+void C_MB_rtu_master_Node::startServ()
 {
-    // 启动NODE事务扫描定时器
-    this->m_timer.start(200);
-
-    // 依次启动事务对象服务
-    int sum = this->m_listTransObj.size();
-    for(int i=0;i<sum;i++)
-    {
-        this->m_listTransObj[i]->start();
-    }
-
     // 打开串口
-    this->m_serial.openCOM(comCfg);
+    if(this->m_serial.openCOM(this->m_confNode.rtuMasterNode.nodeInfo.serialInfo))
+    {
+        // 启动NODE事务扫描定时器
+        if(!this->m_timer.isActive())
+        {
+            this->m_timer.start(500);
+        }
+
+        // 依次启动事务对象服务
+        int sum = this->m_listTransObj.size();
+        for(int i=0;i<sum;i++)
+        {
+            this->m_listTransObj[i]->start();
+        }
+    }
 }
 
 // 停止服务
@@ -120,5 +122,41 @@ void C_MB_rtu_master_Node::stopServ()
     }
 
     // 停止事务扫描定时器
-    this->m_timer.stop();
+    if(this->m_timer.isActive())
+    {
+        this->m_timer.stop();
+    }
+}
+
+bool C_MB_rtu_master_Node::setNodeInfo(const confCommuNode &confNode)
+{
+    this->m_confNode = confNode;
+    int sum = confNode.rtuMasterNode.listTrans.size();
+    for(int i=0;i<sum;i++)
+    {
+        C_MB_master_trans *ptr = new C_MB_master_trans;
+        if(ptr!=NULL)
+        {
+            ptr->setQueryTrans(confNode.rtuMasterNode.listTrans.at(i));
+            this->m_listTransObj.append(ptr);
+
+            connect(ptr,&C_MB_master_trans::sig_reuest,this,&C_MB_rtu_master_Node::slot_request);
+        }else
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+void C_MB_rtu_master_Node::clear()
+{
+    foreach(C_MB_master_trans* ptr,this->m_listTransObj)
+    {
+        delete ptr;
+    }
+
+    this->m_listTransObj.clear();
 }

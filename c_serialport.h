@@ -43,6 +43,8 @@ public:
     static QStringList flowCtrlList();
     static enum QSerialPort::Parity strToParity(QString str);
     static QString parityToStr(enum QSerialPort::Parity parity);
+    static enum QSerialPort::StopBits strToStopBits(QString str);
+    static QString stopBitsToStr(enum QSerialPort::StopBits stopBits);
 
 };
 

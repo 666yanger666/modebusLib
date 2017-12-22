@@ -2,10 +2,12 @@
 #include "c_crc.h"
 #include <QDebug>
 #include <QMessageBox>
+#include "c_endian.h"
+#include "../../../WORK/HLMonitorGit/include/include.h"
 
 C_MB_RTU_MASTER::C_MB_RTU_MASTER(QObject *parent) : QObject(parent)
 {
-     connect(&this->m_replytimer,&QTimer::timeout,this,C_MB_RTU_MASTER::slot_replyTimer);
+     connect(&this->m_replytimer,&QTimer::timeout,this,&C_MB_RTU_MASTER::slot_replyTimer);
      this->m_timeout = 3000; //响应超时
      this->m_sta = RTUmaster_IDEL;
 }
@@ -25,10 +27,19 @@ void C_MB_RTU_MASTER::slot_replyTimer()
     this->m_replytimer.stop();
 
     qDebug()<<"超时！";
+    emit sig_Error(this->m_queryTrans.transID,this->m_queryTrans.trans.slaveAdr,this->m_queryTrans.trans.funcCode,RTUmasterErr_TIMEOUT);
 }
 
 void C_MB_RTU_MASTER::slot_recvData(QByteArray &array)
 {
+    QString strT;
+    foreach(quint8 ch,array)
+    {
+        strT+=QString::number(ch,16);
+        strT+=" ";
+    }
+    qDebug()<<"RECV:"<<strT;
+
     //非等待应答  不接收数据
     if(this->m_sta!=RTUmaster_WAITREPLY)
     {
@@ -44,7 +55,7 @@ void C_MB_RTU_MASTER::slot_recvData(QByteArray &array)
         {
             break;
         }
-        if(this->m_recvBuf.at(0)!=this->m_queryTrans.trans.slaveAdr)
+        if((quint8)(this->m_recvBuf.at(0))!=this->m_queryTrans.trans.slaveAdr)
         {
             this->m_recvBuf.remove(0,1);
             continue;
@@ -55,7 +66,7 @@ void C_MB_RTU_MASTER::slot_recvData(QByteArray &array)
         {
             break;
         }
-        if(quint8(this->m_recvBuf.at(1)&0X80) == 0X80)
+        if((quint8)(this->m_recvBuf.at(1)&0X80) == 0X80)
         {
             if(this->m_recvBuf.size()<5)
             {
@@ -63,11 +74,9 @@ void C_MB_RTU_MASTER::slot_recvData(QByteArray &array)
             }
 
             // crc 校验检查
-            def_uin16  crc;
-            crc.by_1 = this->m_recvBuf.at(3);
-            crc.by_0 = this->m_recvBuf.at(4);
+            quint16  crc=C_endian::uint16(ORDER_BIG,this->m_recvBuf.at(3),this->m_recvBuf.at(4));
 
-            if(C_CRC::crc16((quint8*)this->m_recvBuf.data(),3)!=crc.value)
+            if(C_CRC::crc16((quint8*)this->m_recvBuf.data(),3)!=crc)
             {
                 this->m_recvBuf.remove(0,1);  // 校验错
                 continue;
@@ -91,53 +100,81 @@ void C_MB_RTU_MASTER::slot_recvData(QByteArray &array)
             {
                 errCode = RTUmaster_UNKOWN;
             }
-            qDebug()<<"异常码:"<<this->m_recvBuf.at(2)<<errCode;
+
+            emit sig_Error(this->m_queryTrans.transID,this->m_queryTrans.trans.slaveAdr,this->m_queryTrans.trans.funcCode,errCode);
+            qDebug()<<"异常错误码:"<<this->m_recvBuf.at(2)<<errCode;
             this->m_sta = RTUmaster_IDEL; // 空闲状态
             this->m_replytimer.stop();
             break;
         }
 
         // 检查功能码
-        if(this->m_recvBuf.at(1)!=this->m_queryTrans.trans.funcCode)
+        if((quint8)(this->m_recvBuf.at(1))!=(quint8)(this->m_queryTrans.trans.funcCode))
         {
             this->m_recvBuf.remove(0,1);  // 功能码错
             continue;
         }
 
-        if(this->m_recvBuf.size()<5+this->m_byteSum)
+        // 按照功能码不同解析数据报
+        enumMB_FuncCode funcCode = this->m_queryTrans.trans.funcCode;
+        quint8 crcH;
+        quint8 crcL;
+        quint16 crcLen;
+        if(MB_func01==funcCode || MB_func02==funcCode ||
+           MB_func03==funcCode || MB_func04==funcCode)
         {
-            break;  // 等待继续接收
+            if(this->m_recvBuf.size()<5+this->m_byteSum)
+            {
+                break;  // 等待继续接收
+            }
+            crcH = this->m_recvBuf.at(3+this->m_byteSum);
+            crcL = this->m_recvBuf.at(4+this->m_byteSum);
+            crcLen = 3+this->m_byteSum;
+
+        }else if(MB_func10==funcCode)
+        {
+            if(this->m_recvBuf.size()<8)  // 0X10 正常应答帧长8个字节
+            {
+                break; // 等待继续
+            }
+            crcH = this->m_recvBuf.at(6);
+            crcL = this->m_recvBuf.at(7);
+            crcLen = 6;
+        }else
+        {
+            this->m_recvBuf.remove(0,1);
+            continue;
         }
 
         // crc 校验
-        def_uin16  crc;
-        crc.by_1 = this->m_recvBuf.at(3+this->m_byteSum);
-        crc.by_0 = this->m_recvBuf.at(4+this->m_byteSum);
-        qDebug()<<C_CRC::crc16((quint8*)this->m_recvBuf.data(),3+this->m_byteSum);
-        if(C_CRC::crc16((quint8*)this->m_recvBuf.data(),3+this->m_byteSum)!=crc.value)
+        quint16 crc = C_endian::uint16(ORDER_BIG,crcH,crcL);
+        if(C_CRC::crc16((quint8*)this->m_recvBuf.data(),crcLen)!=crc)
         {
             this->m_recvBuf.remove(0,1);  // 校验错
             continue;
         }
 
         QByteArray tArray;
-        tArray =  this->m_recvBuf.mid(3,this->m_byteSum);  // 截取数据
-        this->m_recvBuf.remove(0,5+this->m_byteSum);  //  删除数据帧
+        tArray =  this->m_recvBuf.left(crcLen);  // 截取数据
+        this->m_recvBuf.remove(0,crcLen+2);  //  删除数据帧
 
         //处理应答
         this->m_sta = RTUmaster_PROCREPLY;
-        if(0x01==this->m_queryTrans.trans.funcCode)
+        if(MB_func01==this->m_queryTrans.trans.funcCode)
         {
-            this->proc_01(tArray);
-        }else if(0x02==this->m_queryTrans.trans.funcCode)
+            this->proc_0X01(tArray);
+        }else if(MB_func02==this->m_queryTrans.trans.funcCode)
         {
-            this->proc_02(tArray);
-        }else if(0x03==this->m_queryTrans.trans.funcCode)
+            this->proc_0X02(tArray);
+        }else if(MB_func03==this->m_queryTrans.trans.funcCode)
         {
-            this->proc_03(tArray);
-        }else if(0x04==this->m_queryTrans.trans.funcCode)
+            this->proc_0X03(tArray);
+        }else if(MB_func04==this->m_queryTrans.trans.funcCode)
         {
-            this->proc_04(tArray);
+            this->proc_0X04(tArray);
+        }else if(MB_func10==this->m_queryTrans.trans.funcCode)
+        {
+            this->proc_0X10(tArray);
         }
 
         this->m_sta = RTUmaster_IDEL; // 空闲状态
@@ -145,9 +182,29 @@ void C_MB_RTU_MASTER::slot_recvData(QByteArray &array)
     }
 }
 
-// 解析 01 pdu
-void C_MB_RTU_MASTER::proc_01(QByteArray &array)
+void C_MB_RTU_MASTER::proc_0X10(QByteArray array)
 {
+    array.remove(0,2);
+    if(array.size() != 4)
+    {
+        return;
+    }
+
+    // 返回结果
+    MB_ReplyBody res;
+    //起始地址
+    res.wMulR.adr = C_endian::uint16(ORDER_BIG,array.at(0),array.at(1));
+    // 返回寄存器数目
+    res.wMulR.sum = C_endian::uint16(ORDER_BIG,array.at(2),array.at(3));
+
+    emit sig_proc(this->m_queryTrans.transID,this->m_queryTrans.trans.slaveAdr,this->m_queryTrans.trans.funcCode,res);
+}
+
+// 解析 01 pdu
+void C_MB_RTU_MASTER::proc_0X01(QByteArray array)
+{
+    array.remove(0,3);
+
     if(array.size() != this->m_byteSum)
     {
         return;
@@ -162,8 +219,9 @@ void C_MB_RTU_MASTER::proc_01(QByteArray &array)
     emit sig_proc(this->m_queryTrans.transID,this->m_queryTrans.trans.slaveAdr,this->m_queryTrans.trans.funcCode,res);
 }
 
-void C_MB_RTU_MASTER::proc_02(QByteArray &array)
+void C_MB_RTU_MASTER::proc_0X02(QByteArray array)
 {
+     array.remove(0,3);
     if(array.size() != this->m_byteSum)
     {
         return;
@@ -179,8 +237,9 @@ void C_MB_RTU_MASTER::proc_02(QByteArray &array)
 }
 
 // 解析03 PDU 数据
-void C_MB_RTU_MASTER::proc_03(QByteArray &array)
+void C_MB_RTU_MASTER::proc_0X03(QByteArray array)
 { 
+    array.remove(0,3);
     if(array.size() != this->m_byteSum)
     {
         return;
@@ -195,8 +254,9 @@ void C_MB_RTU_MASTER::proc_03(QByteArray &array)
 }
 
 // 解析03 PDU 数据
-void C_MB_RTU_MASTER::proc_04(QByteArray &array)
+void C_MB_RTU_MASTER::proc_0X04(QByteArray array)
 {
+    array.remove(0,3);
     if(array.size() != this->m_byteSum)
     {
         return;
@@ -217,26 +277,31 @@ void C_MB_RTU_MASTER::setTimeOut(int ms)
 
 void C_MB_RTU_MASTER::queryCMD(MBRequestTransEx trans)
 {
-    if(trans.trans.funcCode!=MB_func01 &&
-       trans.trans.funcCode!=MB_func02 &&
-       trans.trans.funcCode!=MB_func03 &&
-       trans.trans.funcCode!=MB_func04)
+    // 组帧
+    QByteArray array;
+    array.append(trans.trans.slaveAdr);
+
+    if(MB_func01==trans.trans.funcCode||
+       MB_func02==trans.trans.funcCode||
+       MB_func03==trans.trans.funcCode||
+       MB_func04==trans.trans.funcCode)
+    {
+         array.append(C_mod_protocol::read_01020304PDU(trans.trans.funcCode,trans.trans.beginAdr,trans.trans.paraSum));
+    }else if(MB_func10==trans.trans.funcCode)
+    {
+        QList<MBregister>regList;
+        array.append(C_mod_protocol::write_0X10(trans.trans.beginAdr,trans.trans.paraSum,trans.regList));
+    }else
     {
         return;
     }
-
-    // 组帧
-    QByteArray array;
-
-    array.append(trans.trans.slaveAdr);
-    array.append(C_mod_protocol::read_01020304PDU(trans.trans.funcCode,trans.trans.beginAdr,trans.trans.paraSum));
-
     quint16 crc = C_CRC::crc16((quint8*)array.data(),array.size());
 
-    def_uin16 temp;
-    temp.value = crc;
-    array.append(temp.by_1);
-    array.append(temp.by_0);
+    quint8 by0;
+    quint8 by1;
+    C_endian::uint16(ORDER_BIG,crc,by0,by1);
+    array.append(by0);
+    array.append(by1);
 
     // 清空接收缓存发送数据
     this->m_recvBuf.clear();
@@ -263,9 +328,19 @@ void C_MB_RTU_MASTER::queryCMD(MBRequestTransEx trans)
     // 发送请求
     this->sendData(array);
 
+    QString strT;
+    foreach(quint8 ch,array)
+    {
+        strT+=QString::number(ch,16);
+        strT+=" ";
+    }
+    qDebug()<<"SEND:"<<strT;
+
     // 启动应答超时定时器
     this->m_replytimer.start(this->m_timeout);
 }
+
+
 
 // 协议驱动状态机是否空闲
 bool C_MB_RTU_MASTER::isIdle()

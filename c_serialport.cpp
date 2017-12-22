@@ -54,8 +54,6 @@ void C_SerialPort::closeCOM()
 {
     if(this->m_serialPort.isOpen())
     {
-        this->m_serialPort.clearError();
-        this->m_serialPort.clear();
         this->m_serialPort.close();
     }
 }
@@ -63,7 +61,10 @@ void C_SerialPort::closeCOM()
 //写数据
 void C_SerialPort::writeData(QByteArray &array)
 {
-    this->m_serialPort.write(array);
+    if(this->m_serialPort.isOpen())
+    {
+        this->m_serialPort.write(array);
+    }
 }
 
 void C_SerialPort::get_count(quint64 &sum, quint32 &byte_s, quint32 &byte)
@@ -170,6 +171,40 @@ QString C_SerialPort::parityToStr(QSerialPort::Parity parity)
     }else
     {
         return "无校验";
+    }
+}
+
+QSerialPort::StopBits C_SerialPort::strToStopBits(QString str)
+{
+    if("1"==str)
+    {
+        return QSerialPort::OneStop;
+    }else if("1.5"==str)
+    {
+        return QSerialPort::OneAndHalfStop;
+    }else if("2"==str)
+    {
+        return QSerialPort::TwoStop;
+    }else
+    {
+        return QSerialPort::UnknownStopBits;
+    }
+}
+
+QString C_SerialPort::stopBitsToStr(QSerialPort::StopBits stopBits)
+{
+    if(QSerialPort::OneStop==stopBits)
+    {
+        return "1";
+    }else if(QSerialPort::OneAndHalfStop==stopBits)
+    {
+        return "1.5";
+    }else if(QSerialPort::TwoStop==stopBits)
+    {
+        return  "2";
+    }else
+    {
+        return "未知";
     }
 }
 
