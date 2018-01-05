@@ -32,7 +32,8 @@ public:
     void stop();
     int transID();
     void replyProc(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,MB_ReplyBody body);
-    void replyErr(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,RTU_Master_ErrCode errcode);
+    void replyErr_RTU(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,RTU_Master_ErrCode errcode);
+    void replyErr_TCP(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,TCP_Master_ErrCode errcode);
 };
 
 #endif // C_MB_RTU_MASTER_TRANS_H

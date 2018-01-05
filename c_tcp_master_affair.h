@@ -5,27 +5,12 @@
 #include "c_mod_protocol.h"
 #include <QTimer>
 
-enum TCP_Master_ErrCode
-{
-    TCPmasterErr_TIMEOUT =0, // 响应超时
-    TCPmasterErr_REPLY01 =1, // 非法功能码:服务器不支持的功能码
-    TCPmasterErr_REPLY02,    // 非法数据地址:与请求有关
-    TCPmasterErr_REPLY03,    // 非法数据值:与请求有关
-    TCPmasterErr_REPLY04,    // 服务器故障:执行过程中服务器故障
-    TCPmasterErr_REPLY05,    // 确认:耗时操作，返回接收确认
-    TCPmasterErr_REPLY06,    // 服务器忙:服务器忙，客户端决定重发请求
-    TCPmasterErr_REPLY0A,    // 网关故障:网关路径无效
-    TCPmasterErr_REPLY0B,    // 网关故障:目标设备无响应，由网关生成该异常
-    TCPmasterErr_UNKNOW      // 未知定义
-};
-
 // MODEBUS_TCP  主机模式  请求事务 类
 class C_tcp_master_affair : public QObject
 {
     Q_OBJECT
 public:
     explicit C_tcp_master_affair(QObject *parent = 0);
-
 signals:
     void sig_proc(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,MB_ReplyBody body);
     void sig_Error(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,TCP_Master_ErrCode errcode);
@@ -36,24 +21,19 @@ private slots:
     void slot_replyTimer();
 private:
     QTimer m_replytimer;      // 响应超时定时器
-
-    quint8  m_byteSum;        // 正常应答字节
-
-    bool m_isIdel;            // 是否通讯状态使用
+    bool m_isIdel;            // 是否通讯状态使用(等待挂起状态)
     QByteArray m_recvBuf;     // 应答数据暂存
-
     MBRequestTransTCPEx m_queryTrans;
 
+    int m_timerSUM;      // 定时计数
 private:
-    void proc_01(QByteArray &array);
-    void proc_02(QByteArray &array);
-    void proc_03(QByteArray &array);
-    void proc_04(QByteArray &array);
-    void proc_0X10(QByteArray array);
+    void proc_0X01_0X02(QByteArray &array);
+    void proc_0X03_0X04(QByteArray &array);
+    void proc_0X0F_0X10(QByteArray array);
 private:
     void sendData(QByteArray data);
 public:
-    void queryCMD(MBRequestTransTCPEx trans,int timeout); // 请求数据
+    void queryCMD(MBRequestTransTCPEx trans); // 请求数据
     void replyData(QByteArray data);
     bool isIdel();
 };

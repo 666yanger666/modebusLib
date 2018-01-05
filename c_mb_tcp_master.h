@@ -3,13 +3,12 @@
 
 #include <QObject>
 #include "c_mod_protocol.h"
-#include <QTimer>
 #include "c_tcp_master_affair.h"
 #include "../../../WORK/HLMonitorGit/include/include.h"
 #include <QMap>
 
 // TCP Master主机规约
-const int MB_TCP_MAX_AFF_SUM = 10;      // 默认支持最大并发事务数为 10
+const int MB_TCP_MAX_AFF_SUM = 1;      // 默认支持最大并发事务数为 10
 const int MB_TCP_MAX_AFF_ID  = 1024*10; // 最大事务ID计数值，值超过后值归 1
 
 class C_MB_TCP_MASTER : public QObject
@@ -21,25 +20,16 @@ signals:
     void sig_sendData(QByteArray &array);  //连接通讯模块 发送数据
 signals:
     void sig_proc(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,MB_ReplyBody body);
- //   void sig_Error(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,RTU_Master_ErrCode errcode);
-    void sig_Error(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,RTU_Master_ErrCode errcode);
-
+    void sig_Error(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,TCP_Master_ErrCode errcode);
 public slots:
     void slot_recvData(const QByteArray &array);  // 异步接收数据槽（从socket接收）
 private:
-    int m_timeout;       // 响应超时定时 ms
-    int m_retryTimes;    // 重传次数
-    int m_retrySum;      // 重传计数
-
     quint16 m_affairID;       //
     quint16 makeAffairID();   // 事务ID生成
-    quint8 m_devID;           // 单元标识符(对于IP直接寻址：该项不使用固定位 0xff;
+    quint8 m_devID;           // 单元标识符(对于IP直接寻址：该项使用固定值 0xff;
                               //          对于串行链路网关：该项为从机地址)
-
     QList<C_tcp_master_affair*> m_listAffair; // 事务对象列表
-
 public:
-    void setTimeOut(int ms);        //  设置响应超时
     void queryCMD(MBRequestTransEx trans); // 请求数据
     bool hasIdle();
 };

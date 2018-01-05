@@ -6,103 +6,64 @@ C_tcp_master_affair::C_tcp_master_affair(QObject *parent) : QObject(parent)
 {
     this->m_isIdel =true;
     connect(&this->m_replytimer,&QTimer::timeout,this,&C_tcp_master_affair::slot_replyTimer);
+
+    // 启动应答超时定时器
+    this->m_replytimer.start(1000);  //
 }
 
 void C_tcp_master_affair::slot_replyTimer()
 {
-    this->m_isIdel = true;
-    this->m_replytimer.stop();
-    this->m_recvBuf.clear();
+    if(!this->m_isIdel)
+    {
+        this->m_timerSUM+=1;
+        if(this->m_timerSUM>3)
+        {
+            this->m_recvBuf.clear();
+            this->m_isIdel = true;
+            emit sig_Error(this->m_queryTrans.trans.transID,this->m_queryTrans.trans.trans.slaveAdr,this->m_queryTrans.trans.trans.funcCode,TCPmasterErr_TIMEOUT);
 
-    // 发送超时
-  //  emit sig_Error(this->m_affairID,this->m_devID,this->m_curFcode,TCPmasterErr_TIMEOUT);
-
-    qDebug()<<"超时！";
+            qDebug()<<"超时！";
+        }
+    }
 }
 
-void C_tcp_master_affair::proc_01(QByteArray &array)
+void C_tcp_master_affair::proc_0X01_0X02(QByteArray &array)
 {
-    if(array.size() != this->m_byteSum)
+    array.remove(0,9);
+    int bytes = C_mod_protocol::bitToByes(this->m_queryTrans.trans.trans.paraSum);
+    if(array.size()==bytes)
     {
-        return;
+        MB_ReplyBody res = C_mod_protocol::proc_01_02(array,this->m_queryTrans.trans.trans.paraSum);
+        // 发送解析结果信号
+        emit sig_proc(this->m_queryTrans.trans.transID,this->m_queryTrans.trans.trans.slaveAdr,this->m_queryTrans.trans.trans.funcCode,res);
     }
-    if(this->m_byteSum!=(this->m_queryTrans.trans.trans.paraSum+8)/8)
-    {
-        return;
-    }
-    MB_ReplyBody res = C_mod_protocol::proc_01(this->m_byteSum,this->m_queryTrans.trans.trans.paraSum,array);
-
-    // 发送解析结果信号
-    emit sig_proc(this->m_queryTrans.trans.transID,this->m_queryTrans.trans.trans.slaveAdr,this->m_queryTrans.trans.trans.funcCode,res);
 }
 
-void C_tcp_master_affair::proc_02(QByteArray &array)
+void C_tcp_master_affair::proc_0X03_0X04(QByteArray &array)
 {
-    if(array.size() != this->m_byteSum)
+    array.remove(0,9);
+    int bytes = this->m_queryTrans.trans.trans.paraSum*2;
+    if(array.size()==bytes)
     {
+        MB_ReplyBody res = C_mod_protocol::proc_03_04(array);
+        emit sig_proc(this->m_queryTrans.trans.transID,this->m_queryTrans.trans.trans.slaveAdr,this->m_queryTrans.trans.trans.funcCode,res);
         return;
     }
-    if(this->m_byteSum!=(this->m_queryTrans.trans.trans.paraSum+8)/8)
-    {
-        return;
-    }
-
-    MB_ReplyBody res = C_mod_protocol::proc_02(this->m_byteSum,this->m_queryTrans.trans.trans.paraSum,array);
-
-    emit sig_proc(this->m_queryTrans.trans.transID,this->m_queryTrans.trans.trans.slaveAdr,this->m_queryTrans.trans.trans.funcCode,res);
 }
 
-void C_tcp_master_affair::proc_03(QByteArray &array)
+void C_tcp_master_affair::proc_0X0F_0X10(QByteArray array)
 {
-    if(array.size() != this->m_byteSum)
+    array.remove(0,8);
+    if(array.size() == 4)
     {
-        return;
+        // 返回结果
+        MB_ReplyBody res;
+        //起始地址
+        res.wMulR.adr = C_endian::uint16(ORDER_BIG,array.at(0),array.at(1));
+        // 返回寄存器数目
+        res.wMulR.sum = C_endian::uint16(ORDER_BIG,array.at(2),array.at(3));
+        emit sig_proc(this->m_queryTrans.trans.transID,this->m_queryTrans.trans.trans.slaveAdr,this->m_queryTrans.trans.trans.funcCode,res);
     }
-    if(this->m_byteSum!=m_queryTrans.trans.trans.paraSum*2)
-    {
-        return;
-    }
-
-    MB_ReplyBody res = C_mod_protocol::proc_03(this->m_queryTrans.trans.trans.paraSum,array);
-  //  foreach(quint16 d,res.reg)
-    {
-    //    qDebug()<<"*****"<<QString::number(d,16);
-    }
-
-    //发送信号：处理结果
-    emit sig_proc(this->m_queryTrans.trans.transID,this->m_queryTrans.trans.trans.slaveAdr,this->m_queryTrans.trans.trans.funcCode,res);
-}
-
-void C_tcp_master_affair::proc_04(QByteArray &array)
-{
-    if(array.size() != this->m_byteSum)
-    {
-        return;
-    }
-    if(this->m_byteSum!=m_queryTrans.trans.trans.paraSum*2)
-    {
-        return;
-    }
-
-    MB_ReplyBody res = C_mod_protocol::proc_04(this->m_queryTrans.trans.trans.paraSum,array);
-    emit sig_proc(this->m_queryTrans.trans.transID,this->m_queryTrans.trans.trans.slaveAdr,this->m_queryTrans.trans.trans.funcCode,res);
-}
-
-void C_tcp_master_affair::proc_0X10(QByteArray array)
-{
-    if(array.size()!=4)
-    {
-        return;
-    }
-
-    // 返回结果
-    MB_ReplyBody res;
-    //起始地址
-    res.wMulR.adr = C_endian::uint16(ORDER_BIG,array.at(0),array.at(1));
-    // 返回寄存器数目
-    res.wMulR.sum = C_endian::uint16(ORDER_BIG,array.at(2),array.at(3));
-
-    emit sig_proc(this->m_queryTrans.trans.transID,this->m_queryTrans.trans.trans.slaveAdr,this->m_queryTrans.trans.trans.funcCode,res);
 }
 
 void C_tcp_master_affair::sendData(QByteArray data)
@@ -110,7 +71,7 @@ void C_tcp_master_affair::sendData(QByteArray data)
     emit sig_sendData(data);
 }
 
-void C_tcp_master_affair::queryCMD(MBRequestTransTCPEx trans,int timeout)
+void C_tcp_master_affair::queryCMD(MBRequestTransTCPEx trans)
 {
     enumMB_FuncCode fcode=trans.trans.trans.funcCode;
     quint16 afid = trans.affairID;
@@ -151,26 +112,9 @@ void C_tcp_master_affair::queryCMD(MBRequestTransTCPEx trans,int timeout)
     C_endian::uint16(ORDER_BIG,PDU.size()+1,by0,by1);
     fram.append(by0);
     fram.append(by1);
-
     fram.append(devID);  // 单元标识符
-
     // PDU
     fram.append(PDU);
-
-    // 计算正常回应数据字节数
-    if(MB_func01==fcode)
-    {
-        this->m_byteSum = (sum+8)/8;
-    }else if(MB_func02==fcode)
-    {
-        this->m_byteSum = (sum+8)/8;
-    }else if(MB_func03==fcode)
-    {
-        this->m_byteSum = sum*2;
-    }else if(MB_func04==fcode)
-    {
-        this->m_byteSum = sum*2;
-    }
 
     // 保存状态
     this->m_isIdel = false;
@@ -178,6 +122,7 @@ void C_tcp_master_affair::queryCMD(MBRequestTransTCPEx trans,int timeout)
 
     // 发送请求  启动应答超时定时器
     this->sendData(fram);
+    this->m_timerSUM=0;  // 定时计数清零
 
     QString strT;
     foreach(quint8 ch,fram)
@@ -186,25 +131,16 @@ void C_tcp_master_affair::queryCMD(MBRequestTransTCPEx trans,int timeout)
         strT+=" ";
     }
     qDebug()<<"SEND:"<<strT;
-    this->m_replytimer.start(timeout);
 }
 
 void C_tcp_master_affair::replyData(QByteArray data)
 {
-    enumMB_FuncCode fcode=this->m_queryTrans.trans.trans.funcCode;
-    quint16 afid = this->m_queryTrans.affairID;
-    quint8 devID = this->m_queryTrans.trans.trans.slaveAdr;
- //   quint16 sum = this->m_queryTrans.trans.trans.paraSum;
- //   quint16 adr = this->m_queryTrans.trans.trans.beginAdr;
- //   int transID = this->m_queryTrans.trans.transID;
     // 判断是否等待数据
     if(this->m_isIdel)
     {
         return;
     }
     this->m_recvBuf.append(data);
-
-    qDebug()<<"#####:"<<this->m_byteSum;
 
     QString strT;
     foreach(quint8 ch,data)
@@ -213,21 +149,21 @@ void C_tcp_master_affair::replyData(QByteArray data)
         strT+=" ";
     }
     qDebug()<<"RECV:"<<strT;
-    qDebug()<<afid<< C_endian::uint16(ORDER_BIG,this->m_recvBuf.at(0),this->m_recvBuf.at(1));
+
     for(;;)
     {
+        //MBAP头
         if(this->m_recvBuf.size()<7)
         {
             return;
         }
+        //事务ID
         quint16 temp = C_endian::uint16(ORDER_BIG,this->m_recvBuf.at(0),this->m_recvBuf.at(1));
-        // 事务ID
-        if(afid!=temp)
+        if(temp!=this->m_queryTrans.affairID)
         {
             this->m_recvBuf.remove(0,1);
             continue;
         }
-
         // MB协议标识符
         temp = C_endian::uint16(ORDER_BIG,this->m_recvBuf.at(2),this->m_recvBuf.at(3));
         if(temp!=0)
@@ -235,29 +171,40 @@ void C_tcp_master_affair::replyData(QByteArray data)
             this->m_recvBuf.remove(0,1);
             continue;
         }
-
         // 单元标识符
-        if(devID != (quint8)(this->m_recvBuf.at(6)))
+        if((quint8)(this->m_recvBuf.at(6))!=this->m_queryTrans.trans.trans.slaveAdr)
         {
             this->m_recvBuf.remove(0,1);
             continue;
         }
-
-        // 长度
+        // 总长度
         temp = C_endian::uint16(ORDER_BIG,this->m_recvBuf.at(4),this->m_recvBuf.at(5));
         if(this->m_recvBuf.size()<6+temp)
         {
             return;
         }
-     qDebug()<<"33333";
         //funcID
-        if(this->m_recvBuf.size()<9)
+        if(this->m_recvBuf.size()<8)
         {
             this->m_recvBuf.remove(0,1);
             continue;
         }
-        if(((quint8)this->m_recvBuf.at(7))>=0x80)
+        quint8  fcode = this->m_recvBuf.at(7);
+        //是否返回异常码
+        if((quint8)(fcode&0X80)==0X80)
         {
+            // 异常码返回帧长 = 7+2=9
+            if(this->m_recvBuf.size()<9)
+            {
+                this->m_recvBuf.remove(0,1);
+                continue;
+            }
+            // 功能码检查
+            if((quint8)(fcode-0x80) !=this->m_queryTrans.trans.trans.funcCode)
+            {
+                this->m_recvBuf.remove(0,1);  // 功能码错
+                continue;
+            }
             // 解析异常码
             quint8 err = (quint8)this->m_recvBuf.at(8);
             TCP_Master_ErrCode errCode;
@@ -268,60 +215,79 @@ void C_tcp_master_affair::replyData(QByteArray data)
             {
                 errCode = TCPmasterErr_UNKNOW;  // 未知定义
             }
-            emit sig_Error(afid,devID,fcode,errCode);
             qDebug()<<"异常码:"<<QString::number((quint8)this->m_recvBuf.at(8),16);
-          //  emit sig_Error(transID,devID,fcode,errCode);  // 发送错误码应答
+            emit sig_Error(this->m_queryTrans.trans.transID,this->m_queryTrans.trans.trans.slaveAdr,this->m_queryTrans.trans.trans.funcCode,errCode);  // 发送错误码应答
 
-            this->m_replytimer.stop();
             this->m_recvBuf.clear();
             this->m_isIdel = true;
-
             return;
         }
-
-        if(((enumMB_FuncCode)this->m_recvBuf.at(7))!=fcode)
+        // 正常返回：检查功能码
+        if(fcode!=this->m_queryTrans.trans.trans.funcCode)
         {
             this->m_recvBuf.remove(0,1);
             continue;
         }
-
-        // bytesum
-        if(MB_func01==fcode || MB_func02==fcode ||
-                MB_func03==fcode || MB_func04==fcode )
+        if(MB_func01==fcode || MB_func02==fcode)
         {
-
-            if((quint8)(this->m_recvBuf.at(8))!=this->m_byteSum)
+            if(this->m_recvBuf.size()<9)
             {
-                this->m_recvBuf.remove(0,1);
-                continue;
+                this->m_recvBuf.clear();
+                this->m_isIdel = true;
+                return;
             }
-
-            QByteArray dataArray = this->m_recvBuf.mid(9);
-            if(MB_func01==fcode)
+            quint8 bytes = (quint8)(this->m_recvBuf.at(8));
+            if(bytes!=C_mod_protocol::bitToByes(this->m_queryTrans.trans.trans.paraSum))
             {
-                this->proc_01(dataArray);
-            }else if(MB_func02==fcode)
-            {
-                this->proc_02(dataArray);
-            }else if(MB_func03==fcode)
-            {
-                this->proc_03(dataArray);
-            }else if(MB_func04==fcode)
-            {
-                this->proc_04(dataArray);
+                this->m_recvBuf.clear();
+                this->m_isIdel = true;
+                return;
             }
-        }else if(MB_func10==fcode)
+            quint16 framLen = 9+bytes; //数据帧长
+            if(this->m_recvBuf.size()<framLen)
+            {
+                this->m_recvBuf.clear();
+                this->m_isIdel = true;
+                return;
+            }
+            QByteArray fram = this->m_recvBuf.left(framLen);
+            this->proc_0X01_0X02(fram);
+        }else if(MB_func03==fcode || MB_func04==fcode )
         {
-            if(this->m_recvBuf.size()<12)
+            if(this->m_recvBuf.size()<9)
             {
-                this->m_recvBuf.remove(0,1);
-                continue;
+                this->m_recvBuf.clear();
+                this->m_isIdel = true;
+                return;
             }
-            QByteArray dataArray = this->m_recvBuf.mid(8,4);
-            this->proc_0X10(dataArray);
+            quint8 bytes = (quint8)(this->m_recvBuf.at(8));
+            if(bytes!=2*this->m_queryTrans.trans.trans.paraSum)
+            {
+                this->m_recvBuf.clear();
+                this->m_isIdel = true;
+                return;
+            }
+            quint16 framLen = 9+bytes; //数据帧长
+            if(this->m_recvBuf.size()<framLen)
+            {
+                this->m_recvBuf.clear();
+                this->m_isIdel = true;
+                return;
+            }
+            QByteArray fram = this->m_recvBuf.left(framLen);
+            this->proc_0X03_0X04(fram);
+        }else if(MB_func0F==fcode||MB_func10==fcode)
+        {
+            quint16 framLen = 12;
+            if(this->m_recvBuf.size()<framLen)
+            {
+                this->m_recvBuf.clear();
+                this->m_isIdel = true;
+                return;
+            }
+            QByteArray fram = this->m_recvBuf.left(framLen);
+            this->proc_0X0F_0X10(fram);
         }
-
-        this->m_replytimer.stop();
         this->m_recvBuf.clear();
         this->m_isIdel = true;
     }

@@ -10,6 +10,7 @@
 /*
 寄存器地址  连续/非连续  处理  需要上层按照配置做轮询
 */
+// RTU主站
 class C_MB_RTU_MASTER : public QObject
 {
     Q_OBJECT
@@ -23,32 +24,23 @@ signals:
 signals:
     void sig_sendData(QByteArray &array);  //连接通讯模块 发送数据
 private:
-    int m_timeout;       // 响应超时定时 ms
-    int m_retryTimes;    // 重传次数
-    int m_retrySum;      // 重传计数
     RTU_MasterSta  m_sta;// 状态机转移状态
-
-    QTimer m_replytimer; // 响应超时定时器
+    QTimer m_replytimer; // 响应超时定时器   保证状态机能够复位空闲
+    int m_timerSUM;      // 定时计数
     QByteArray m_recvBuf;// 数据接收缓存
 
-    quint8  m_byteSum;   // 正常应答字节
-
     MBRequestTransEx m_queryTrans;
-
 private:
 
 public slots:
    void slot_replyTimer();
    void slot_recvData(QByteArray &array);  // 异步接收数据--槽
 private:
-   void proc_0X01(QByteArray array);
-   void proc_0X02(QByteArray array);
-   void proc_0X03(QByteArray array);
-   void proc_0X04(QByteArray array);
-   void proc_0X10(QByteArray array);
+   void proc_0X01_0X02(QByteArray array);
+   void proc_0X03_0X04(QByteArray array);
+   void proc_0X0F_0X10(QByteArray array);
 
 public:
-    void setTimeOut(int ms);        // 设置响应超时
     void queryCMD(MBRequestTransEx trans); // 请求数据
     bool isIdle();
 };

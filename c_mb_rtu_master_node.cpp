@@ -41,6 +41,7 @@ void C_MB_rtu_master_Node::slot_Timer()
         return;
     }
 
+    qDebug()<<"query......";
     this->m_rtuMaster.queryCMD(this->m_listTrans.first());
     this->m_listTrans.removeFirst(); // 移出队列头
 }
@@ -82,7 +83,7 @@ void C_MB_rtu_master_Node::slot_Error(int transID,quint8 slaveAdr, enumMB_FuncCo
     {
         if(this->m_listTransObj.at(i)->transID()==transID)
         {
-            this->m_listTransObj[i]->replyErr(transID,slaveAdr,fcode,errcode);
+            this->m_listTransObj[i]->replyErr_RTU(transID,slaveAdr,fcode,errcode);
         }
     }
 }

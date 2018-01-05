@@ -51,77 +51,23 @@ QByteArray C_mod_protocol::write_0X10(quint16 adr, quint16 sum, const QList<MBre
     return array;
 }
 
-MB_ReplyBody C_mod_protocol::proc_01(quint8 byteSum, quint16 itemSum, QByteArray &array)
+MB_ReplyBody C_mod_protocol::proc_03_04(QByteArray array)
 {
-    // 计算 开关信号 bit位
     MB_ReplyBody res;
-    quint8 T[8] = {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};
-    for(int i=0;i<byteSum;i++)
+    for(;;)
     {
-        quint8 by = array.at(i);
-        for(int k=0;k<8;k++)   // 按比特位 "与" 运算
+        if(array.size()>=2)
         {
-            res.swt.append(T[k]&by);
+            MBregister rg;
+            rg.byte_0 = array.at(0);
+            rg.byte_1 = array.at(1);
+            res.regList.append(rg);
+            array.remove(0,2);
+        }else
+        {
+            break;
         }
     }
-
-    if(res.swt.size()>=itemSum)
-    {
-         res.swt = res.swt.mid(0,itemSum);
-    }
-
-    return res;
-}
-
-MB_ReplyBody C_mod_protocol::proc_02(quint8 byteSum, quint16 itemSum, QByteArray &array)
-{
-    // 计算 开关信号 bit位
-    MB_ReplyBody res;
-    quint8 T[8] = {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};
-    for(int i=0;i<byteSum;i++)
-    {
-        quint8 by = array.at(i);
-        for(int k=0;k<8;k++)   // 按比特位 "与" 运算
-        {
-            res.swt.append(T[k]&by);
-        }
-    }
-
-    if(res.swt.size()>=itemSum)
-    {
-         res.swt = res.swt.mid(0,itemSum);
-    }
-
-    return res;
-}
-
-MB_ReplyBody C_mod_protocol::proc_03(quint16 itemSum, QByteArray &array)
-{
-    MB_ReplyBody res;
-    MBregister rg;
-    for(int i=0;i<itemSum;i++)
-    {
-        rg.byte_0 = array.at(2*i);
-        rg.byte_1 = array.at(2*i+1);
-
-        res.regList.append(rg);
-    }
-
-    return res;
-}
-
-MB_ReplyBody C_mod_protocol::proc_04(quint16 itemSum, QByteArray &array)
-{
-    MB_ReplyBody res;
-    MBregister rg;
-    for(int i=0;i<itemSum;i++)
-    {
-        rg.byte_0 = array.at(2*i);
-        rg.byte_1 = array.at(2*i+1);
-
-        res.regList.append(rg);
-    }
-
     return res;
 }
 
@@ -133,5 +79,37 @@ QByteArray C_mod_protocol::Error_Reply(quint8 slaveAdr, enumMB_FuncCode fcode, R
     res.append(0X80+fcode);
     res.append(errCode);
 
+    return res;
+}
+
+// bit开关量   给出bit量数目 计算需要的字节数
+int C_mod_protocol::bitToByes(int bitSum)
+{
+    int res = bitSum/8;  //
+    if(bitSum%8)
+    {
+        res+=1;   // 模不为零 +1
+    }
+    return res;
+}
+
+// bit开关位解析
+MB_ReplyBody C_mod_protocol::proc_01_02(QByteArray array,quint16 paraSum)
+{
+    // 计算 开关信号 bit位
+    MB_ReplyBody res;
+    quint8 T[8] = {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};
+    foreach(quint8 by,array)
+    {
+        for(int k=0;k<8;k++)   // 按比特位 "与" 运算
+        {
+            res.swtList.append(T[k]&by);  //非零:开  零:为关
+        }
+    }
+
+    if(res.swtList.size()>paraSum)
+    {
+         res.swtList = res.swtList.mid(0,paraSum);
+    }
     return res;
 }

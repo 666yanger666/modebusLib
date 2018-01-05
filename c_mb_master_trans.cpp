@@ -12,13 +12,44 @@ C_MB_master_trans::C_MB_master_trans(QObject *parent) : QObject(parent)
     connect(&this->m_timer,&QTimer::timeout,this,&C_MB_master_trans::slot_timer);
 }
 
+// 事务轮询
 void C_MB_master_trans::slot_timer()
 {
     MBRequestTransEx trans;
     trans.trans = this->m_trans.transInfo.trans;
     trans.transID = this->m_transID;
 
-    if(MB_func10==trans.trans.funcCode)//   写操作
+    if(MB_func01==trans.trans.funcCode ||
+       MB_func02==trans.trans.funcCode ||
+       MB_func03==trans.trans.funcCode ||
+       MB_func04==trans.trans.funcCode)
+    {
+        ; //nothing
+    }else if(MB_func0F==trans.trans.funcCode)
+    {
+        int sumPara = this->m_trans.transInfo.trans.paraSum;
+        for(int i=0;i<sumPara;i++)
+        {
+            trans.swtArray.append(char(0));
+        }
+        foreach(MBOutputParaCFG cfg,this->m_trans.outListpara)
+        {
+            MBOutputParaV dataV;
+            if(!this->getMonData(cfg.unitGUID,cfg.collGUID,cfg.monInName,dataV))  // 向其他模块获取源数据值
+            {
+                continue;
+            }
+            if(mbPara_SWT==dataV.paraType)
+            {
+                continue;
+            }
+            int dex = cfg.paraADC.paraAdr-this->m_trans.transInfo.trans.beginAdr;
+            if(dex>=0 && dex<sumPara)
+            {
+                trans.swtArray[dex] = dataV.dataSWT.swt;
+            }
+        }
+    }else if(MB_func10==trans.trans.funcCode)//   写操作
     {
         int sumPara = this->m_trans.transInfo.trans.paraSum;
         for(int i=0;i<sumPara;i++)
@@ -31,7 +62,7 @@ void C_MB_master_trans::slot_timer()
         foreach(MBOutputParaCFG cfg,this->m_trans.outListpara)
         {
             MBOutputParaV dataV;
-            if(!this->getMonData(cfg.unitGUID,cfg.collGUID,cfg.monInName,dataV))
+            if(!this->getMonData(cfg.unitGUID,cfg.collGUID,cfg.monInName,dataV))  // 向其他模块获取源数据值
             {
                 continue;
             }
@@ -53,7 +84,6 @@ void C_MB_master_trans::slot_timer()
 
             // 线性变换
             dataV.dataADC.fData64 = dataV.dataADC.fData64 * cfg.paraADC.factor +cfg.paraADC.offset;
-
             if(MB_paraREAL32 == cfg.paraADC.dataType)
             {
                 if(trans.regList.size()>=dex+2)
@@ -177,7 +207,7 @@ int C_MB_master_trans::transID()
 //正常应答
 void C_MB_master_trans::replyProc(int transID, quint8 slaveAdr, enumMB_FuncCode fcode, MB_ReplyBody body)
 {
-    qDebug()<<slaveAdr<<fcode;
+    qDebug()<<"slave:"<<slaveAdr<<"fCode:"<<fcode;
     if(transID!=this->m_transID)
     {
         return;
@@ -196,6 +226,8 @@ void C_MB_master_trans::replyProc(int transID, quint8 slaveAdr, enumMB_FuncCode 
     {
         QList<MBInputParaV>paraList;
         int sum = this->m_trans.listPara.size();
+        QList<MBregister>reg = body.regList; // 寄存器列表
+        int regSUM = reg.size();
         for(int i=0;i<sum;i++)
         {
             MBInputParaCFG para = this->m_trans.listPara.at(i);
@@ -207,7 +239,6 @@ void C_MB_master_trans::replyProc(int transID, quint8 slaveAdr, enumMB_FuncCode 
             {
                 emumDataType dataType = para.paraADC.dataType;
                 enumByteOrderType ordertype = para.paraADC.boType;
-                QList<MBregister>reg = body.regList; // 寄存器列表
                 int dex =  para.paraADC.paraAdr-this->m_trans.transInfo.trans.beginAdr;  //计算地址->游标
                 if(dex<0)
                 {
@@ -215,7 +246,7 @@ void C_MB_master_trans::replyProc(int transID, quint8 slaveAdr, enumMB_FuncCode 
                 }
                 if(MB_paraREAL32 == dataType)
                 {
-                    if(body.regList.size()>=dex+2)
+                    if(regSUM>=dex+2)
                     {
                         float temp = C_endian::float32(ordertype,reg.at(dex+0).byte_0,reg.at(dex+0).byte_1,
                                                                  reg.at(dex+1).byte_0,reg.at(dex+1).byte_1);
@@ -224,7 +255,7 @@ void C_MB_master_trans::replyProc(int transID, quint8 slaveAdr, enumMB_FuncCode 
                     }
                 }else if(MB_paraREAL64 == dataType)
                 {
-                    if(body.regList.size()>=dex+4)
+                    if(regSUM>=dex+4)
                     {
                         double temp = C_endian::float64(ordertype,reg.at(dex+0).byte_0,reg.at(dex+0).byte_1
                                                                  ,reg.at(dex+1).byte_0,reg.at(dex+1).byte_1
@@ -235,7 +266,7 @@ void C_MB_master_trans::replyProc(int transID, quint8 slaveAdr, enumMB_FuncCode 
                     }
                 }else if(MB_paraINT16 == dataType)
                 {
-                    if(body.regList.size()>=dex+1)
+                    if(regSUM>=dex+1)
                     {
                         qint16 temp = C_endian::int16(ordertype,reg.at(dex+0).byte_0,reg.at(dex+0).byte_1);
                         data.dataADC.fData64 = temp*para.paraADC.factor +para.paraADC.offset;  // 线性变换
@@ -243,7 +274,7 @@ void C_MB_master_trans::replyProc(int transID, quint8 slaveAdr, enumMB_FuncCode 
                     }
                 }else if(MB_paraUINT16 == dataType)
                 {
-                    if(body.regList.size()>=dex+1)
+                    if(regSUM>=dex+1)
                     {
                         qint16 temp = C_endian::int16(ordertype,reg.at(dex+0).byte_0,reg.at(dex+0).byte_1);
                         data.dataADC.fData64 = temp*para.paraADC.factor +para.paraADC.offset;  // 线性变换
@@ -251,7 +282,7 @@ void C_MB_master_trans::replyProc(int transID, quint8 slaveAdr, enumMB_FuncCode 
                     }
                 }else if(MB_paraINT32 ==dataType)
                 {
-                    if(body.regList.size()>=dex+2)
+                    if(regSUM>=dex+2)
                     {
                         qint32 temp = C_endian::int32(ordertype,reg.at(dex+0).byte_0,reg.at(dex+0).byte_1
                                                                ,reg.at(dex+1).byte_0,reg.at(dex+1).byte_1);
@@ -260,7 +291,7 @@ void C_MB_master_trans::replyProc(int transID, quint8 slaveAdr, enumMB_FuncCode 
                     }
                 }else if(MB_paraUINT32 == dataType)
                 {
-                    if(body.regList.size()>=dex+2)
+                    if(regSUM>=dex+2)
                     {
                         quint32 temp = C_endian::uint32(ordertype,reg.at(dex+0).byte_0,reg.at(dex+0).byte_1
                                                                  ,reg.at(dex+1).byte_0,reg.at(dex+1).byte_1);
@@ -275,21 +306,73 @@ void C_MB_master_trans::replyProc(int transID, quint8 slaveAdr, enumMB_FuncCode 
         {
             qDebug()<<data.name<<QString::number(data.dataADC.fData64,'f',6);
         }
-
-    }else if(MB_func01==fcode || MB_func02==fcode)
+    }else if(MB_func01==fcode || MB_func02==fcode) // 开关量
     {
-
-    }else if(MB_func10==fcode)
+        QList<MBInputParaV>paraList;
+        int sum = this->m_trans.listPara.size();
+        int regSum = body.swtList.size();
+        qDebug()<<"regSum"<<regSum;
+        for(int i=0;i<sum;i++)
+        {
+            MBInputParaCFG para = this->m_trans.listPara.at(i);
+            MBInputParaV data;
+            data.name = para.name;
+            data.inName = para.inName;
+            data.paraType = para.paraType;
+            if(mbPara_SWT==data.paraType)
+            {
+                int dex = para.paraSWT.paraAdr-this->m_trans.transInfo.trans.beginAdr;  //计算地址->游标
+                if(dex<0)
+                {
+                    continue;
+                }
+                if(regSum>dex)
+                {
+                    data.dataSWT.swt = (quint8)(body.swtList.at(dex));
+                    paraList.append(data);
+                }
+            }
+        }
+        foreach (MBInputParaV data, paraList)
+        {
+            QString str;
+            if(data.dataSWT.swt!=0)
+            {
+                str = "开";
+            }else
+            {
+                str = "关";
+            }
+            qDebug()<<data.name<<QString::number(data.dataSWT.swt)<<str;
+        }
+    }else if(MB_func05==fcode)
+    {
+    }else if(MB_func06==fcode)
+    {
+    }else if(MB_func0F==fcode||MB_func10==fcode)
     {
         qDebug()<<this->m_trans.transInfo.name<<QString(" 写保持寄存器 返回: 地址 %1  数目%2").arg(body.wMulR.adr).arg(body.wMulR.sum);
     }
 }
 
-//错误应答
-void C_MB_master_trans::replyErr(int transID, quint8 slaveAdr, enumMB_FuncCode fcode, RTU_Master_ErrCode errcode)
+//错误应答 RTUmaster
+void C_MB_master_trans::replyErr_RTU(int transID, quint8 slaveAdr, enumMB_FuncCode fcode, RTU_Master_ErrCode errcode)
 {
     transID =transID;
     slaveAdr =slaveAdr;
     fcode = fcode;
     errcode = errcode;
+
+    qDebug()<<QString("RTU错误返回:从机:%1 功能码: %2 错误码:%3").arg(slaveAdr).arg(fcode).arg(errcode);
+}
+
+//错误应答 TCPmaster
+void C_MB_master_trans::replyErr_TCP(int transID, quint8 slaveAdr, enumMB_FuncCode fcode, TCP_Master_ErrCode errcode)
+{
+    transID =transID;
+    slaveAdr =slaveAdr;
+    fcode = fcode;
+    errcode = errcode;
+
+    qDebug()<<QString("TCP错误返回:从机:%1 功能码: %2 错误码:%3").arg(slaveAdr).arg(fcode).arg(errcode);
 }

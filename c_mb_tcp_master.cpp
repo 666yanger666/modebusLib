@@ -3,14 +3,12 @@
 
 C_MB_TCP_MASTER::C_MB_TCP_MASTER(QObject *parent) : QObject(parent)
 {
-    this->m_timeout = 3000;
     this->m_affairID = 0;
 
     for(int i=0;i<MB_TCP_MAX_AFF_SUM;i++)
     {
         this->m_listAffair.append(new C_tcp_master_affair);
         connect(this->m_listAffair.last(),&C_tcp_master_affair::sig_proc,this,&C_MB_TCP_MASTER::sig_proc);
-        //connect(this->m_listAffair.last(),&C_tcp_master_affair::sig_Error,this,&C_MB_TCP_MASTER::sig_Error);
         connect(this->m_listAffair.last(),&C_tcp_master_affair::sig_sendData,this,&C_MB_TCP_MASTER::sig_sendData);
     }
 }
@@ -35,11 +33,6 @@ quint16 C_MB_TCP_MASTER::makeAffairID()
     return this->m_affairID += 1;
 }
 
-void C_MB_TCP_MASTER::setTimeOut(int ms)
-{
-    this->m_timeout = ms;
-}
-
 void C_MB_TCP_MASTER::queryCMD(MBRequestTransEx trans)
 {
     quint16 affID = this->makeAffairID();
@@ -53,7 +46,7 @@ void C_MB_TCP_MASTER::queryCMD(MBRequestTransEx trans)
         if(this->m_listAffair[i]->isIdel())
         {
             //  发送查询命令帧
-            this->m_listAffair[i]->queryCMD(tcpTrans,m_timeout);
+            this->m_listAffair[i]->queryCMD(tcpTrans);
             return;
         }
     }

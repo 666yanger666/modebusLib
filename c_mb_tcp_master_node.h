@@ -15,7 +15,7 @@ private:
     CTcpSock m_tcpSock;
     confCommuNode m_confNode;
     QList<MBRequestTransEx> m_listTrans;  //事务请求信息列表
-    C_MB_TCP_MASTER m_tcpMaster;   // mobus 规约模块
+    C_MB_TCP_MASTER m_tcpMaster;   //mobuss规约模块
     QTimer m_timer; //定时器：扫描请求队列
     QList<C_MB_master_trans *>m_listTransObj;  // trans 对象列表
 
@@ -27,13 +27,10 @@ signals:
 
 public slots:
     void slot_proc(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,MB_ReplyBody body);
-    void slot_Error(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,RTU_Master_ErrCode errcode);
-
+    void slot_Error(int transID,quint8 slaveAdr,enumMB_FuncCode fcode,TCP_Master_ErrCode errcode);
 public:
     void stopServ();
-
     void startServ();
-
     bool setNodeInfo(const confCommuNode &confNode);
 
     void clear();

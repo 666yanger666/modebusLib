@@ -10,8 +10,9 @@ C_MB_tcp_master_Node::C_MB_tcp_master_Node(QObject *parent) : QObject(parent)
     connect(&this->m_timer,&QTimer::timeout,this,&C_MB_tcp_master_Node::slot_Timer);
 
     // node节点与master规约模块
-    connect(&this->m_tcpMaster,&C_MB_TCP_MASTER::sig_proc,this,&C_MB_tcp_master_Node::slot_proc);
-    connect(&this->m_tcpMaster,&C_MB_TCP_MASTER::sig_Error,this,&C_MB_tcp_master_Node::slot_Error);
+  //  connect(&this->m_tcpMaster,&C_MB_TCP_MASTER::sig_proc,this,&C_MB_tcp_master_Node::slot_proc);
+
+  //  connect(&this->m_tcpMaster,&C_MB_TCP_MASTER::sig_Error,this,&C_MB_tcp_master_Node::slot_Error);
 }
 
 // 定时扫描事务请求队列服务
